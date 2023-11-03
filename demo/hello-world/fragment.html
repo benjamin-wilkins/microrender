@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Basic templating engine</title>
+    <style>
+      #timeBox {
+        background: lightgrey;
+        border-left: .5em solid grey;
+        padding: 1em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+    <p>
+      This is an example to (hopefully) run the same JS
+      client-side and server-side in two different
+      environments to produce the same result.
+    </p>
+    <p>
+      The JS will display the time below:
+    </p>
+    <div id="timeBox"></div>
+    <script id="send-fragment-js"></script>
+    <script type="module">
+      import Renderer from "/microrender.js";
+
+      const renderer = new Renderer({js: window.fragmentJS, root: document.documentElement});
+      window.setInterval(() => {renderer.render()}, 1000);
+    </script>
+  </body>
+</html>
