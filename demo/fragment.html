@@ -25,6 +25,7 @@
         padding: 1em;
       }
     </style>
+    <script type="importmap"></script>
   </head>
   <body>
     <h1>Hello World!</h1>
@@ -37,11 +38,11 @@
       The JS will display the time below:
     </p>
     <div id="timeBox"></div>
-    <script id="send-fragment-js"></script>
     <script type="module">
-      import Renderer from "/microrender.js";
+      import Renderer from microrender;
+      import js from js;
 
-      const renderer = new Renderer({js: window.fragmentJS, root: document.documentElement});
+      const renderer = new Renderer({js: js, root: document.documentElement});
       window.setInterval(() => {renderer.render()}, 1000);
     </script>
   </body>

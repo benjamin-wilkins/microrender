@@ -15,9 +15,14 @@
 */
 
 export default {
-  async init(renderer, selector="script#send-fragment-js") {
-    const js = `var fragmentJS = ${renderer.fragment.js.toString()}`;
+  async init(renderer, name, selector="script[type='importmap]'") {
+    const map = {
+      "imports": {
+        "microrender": "https://microrender.pages.dev/core/browser.js",
+        name: renderer.fragment.js
+      }
+    };
 
-    renderer.select(selector).do(e => e.setContent(js));
+    renderer.select(selector).do(e => e.setContent(JSON.stringify(map)));
   }
 };

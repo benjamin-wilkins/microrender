@@ -20,7 +20,11 @@ class Renderer {
 
   constructor(fragment) {
     this.fragment = fragment;
-    this.fragment.js(this.select);
+  }
+
+  async init() {
+    const js = await import(this.fragment.js);
+    js();
   }
 
   select = (selector) => {
