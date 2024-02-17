@@ -14,8 +14,66 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
+class Element {
+  constructor(rewriterElement) {
+    this.rewriterElement = rewriterElement
+  };
+
+  getAttribute = (attr) => {return this.rewriterElement.getAttribute(attr)};
+  hasAttribute = (attr) => {return this.rewriterElement.hasAttribute(attr)};
+  setAttribute = (attr, value) => {this.rewriterElement.setAttribute(attr, value)};
+  removeAttribute = (attr) => {return this.rewriterElement.removeAttribute(attr)};
+
+  setContent = (content) => {this.rewriterElement.setInnerContent(content, {html: true})};
+  setTextContent = (content) => {this.rewriterElement.setInnerContent(content, {html: false})};
+}
+
+class ElementHandler {
+  #transforms = []
+
+  do = (transform) => {
+    this.#transforms.push(transform);
+  };
+
+  element = async (rewriterElement) => {
+    const element = new Element(rewriterElement);
+
+    await Promise.all(this.#transforms.map(async (transform) => {
+      await transform(element);
+    }));
+  };
+}
+
+async function loadFragment(fragment, request, env) {
+  const fragmentPath = `../../fragments/${fragment}`
+
+  const fragmentJS = await import(`${fragmentPath}/fragment.js`);
+  const fragmentHTML = env.ASSETS.fetch(`${fragmentPath}/fragment.html`)
+  
+  if (fragmentJS.onServer) {
+    const rewriter = new HTMLRewriter()
+
+    const $ = (selector) => {
+      const handler = new ElementHandler();
+      rewriter.on(selector, handler);
+      return handler;
+    }
+    
+    fragmentJS.onServer($);
+
+    return rewriter.transform(fragmentHTML);
+  }
+  return fragmentHTML;
+}
+
 export default {
   async fetch(request, env) {
-    
+    const url = new URL(request.url);
+
+    if (url.pathname.startsWith("/fragment/")) {
+      return loadFragment(url.pathname.split("/")[1], request, env);
+    } else {
+      return loadFragment("root", request, env);
+    }
   }
 }
