@@ -1,0 +1,22 @@
+{
+  "name": "microrender",
+  "version": "0.0.0",
+  "description": "Simple JS rendering engine that runs on the edge and the browser for optimum speed and compatibility.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benjamin-wilkins/microrender.git"
+  },
+  "keywords": [
+    "template",
+    "render",
+    "edge",
+    "cloudflare",
+    "browser"
+  ],
+  "author": "Benjamin Wilkins",
+  "license": "LGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/benjamin-wilkins/microrender/issues"
+  },
+  "homepage": "https://github.com/benjamin-wilkins/microrender#readme"
+}
