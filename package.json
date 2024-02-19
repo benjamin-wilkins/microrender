@@ -18,5 +18,8 @@
   "bugs": {
     "url": "https://github.com/benjamin-wilkins/microrender/issues"
   },
-  "homepage": "https://github.com/benjamin-wilkins/microrender#readme"
+  "homepage": "https://github.com/benjamin-wilkins/microrender#readme",
+  "devDependencies": {
+    "wrangler": "^3.28.3"
+  }
 }
