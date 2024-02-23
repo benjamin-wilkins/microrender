@@ -14,4 +14,4 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export {default} from "node_modules/microrender/workers.js";
+export {default} from "../src/server.js";
