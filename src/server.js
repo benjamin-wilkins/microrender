@@ -47,8 +47,6 @@ class ElementHandler {
 async function loadFragment(fragment, request, env) {
   const fragmentJS = fragments[fragment];
   const fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}/fragment`);
-
-  console.log(fragmentJS);
   
   if (fragmentJS.server) {
     const rewriter = new HTMLRewriter();
