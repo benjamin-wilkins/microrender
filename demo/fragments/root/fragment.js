@@ -1,5 +1,5 @@
 /*
-  This file is part of MicroRender, a basic rendering framework.
+  This file is part of a demo of MicroRender, a basic rendering framework.
   Copyright (C) 2023-2024 Benjamin Wilkins
 
   MicroRender is free software: you can redistribute it and/or modify it under the terms of the
