@@ -45,9 +45,7 @@ class ElementHandler {
 }
 
 async function loadFragment(fragment, request, env) {
-  const fragmentPath = `../../fragments/${fragment}`
-
-  const fragmentJS = await import(`${fragmentPath}/fragment.js`);
+  const fragmentJS = fragments[fragment];
   const fragmentHTML = env.ASSETS.fetch(`${fragmentPath}/fragment.html`)
   
   if (fragmentJS.onServer) {

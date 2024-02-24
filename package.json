@@ -6,6 +6,8 @@
     "type": "git",
     "url": "git+https://github.com/benjamin-wilkins/microrender.git"
   },
+  "bin": "./src/bin.js",
+  "type": "module",
   "keywords": [
     "template",
     "render",
