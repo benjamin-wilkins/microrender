@@ -16,6 +16,6 @@
 
 export default {
   async server ($) {
-    $("p").setTextContent("Hello World!");
+    $("p").do((element) => {element.setTextContent("Hello World!")});
   }
 }

@@ -22,7 +22,7 @@ class Element {
   getAttribute = (attr) => {return this.rewriterElement.getAttribute(attr)};
   hasAttribute = (attr) => {return this.rewriterElement.hasAttribute(attr)};
   setAttribute = (attr, value) => {this.rewriterElement.setAttribute(attr, value)};
-  removeAttribute = (attr) => {return this.rewriterElement.removeAttribute(attr)};
+  removeAttribute = (attr) => {this.rewriterElement.removeAttribute(attr)};
 
   setContent = (content) => {this.rewriterElement.setInnerContent(content, {html: true})};
   setTextContent = (content) => {this.rewriterElement.setInnerContent(content, {html: false})};
