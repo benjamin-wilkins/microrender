@@ -46,10 +46,12 @@ class ElementHandler {
 
 async function loadFragment(fragment, request, env) {
   const fragmentJS = fragments[fragment];
-  const fragmentHTML = env.ASSETS.fetch(`${fragmentPath}/fragment.html`)
+  const fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}/fragment`);
+
+  console.log(fragmentJS);
   
-  if (fragmentJS.onServer) {
-    const rewriter = new HTMLRewriter()
+  if (fragmentJS.server) {
+    const rewriter = new HTMLRewriter();
 
     const $ = (selector) => {
       const handler = new ElementHandler();
@@ -57,7 +59,7 @@ async function loadFragment(fragment, request, env) {
       return handler;
     }
     
-    fragmentJS.onServer($);
+    fragmentJS.server($);
 
     return rewriter.transform(fragmentHTML);
   }
@@ -69,7 +71,7 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname.startsWith("/fragment/")) {
-      return loadFragment(url.pathname.split("/")[1], request, env);
+      return loadFragment(url.pathname.split("/")[2], request, env);
     } else {
       return loadFragment("root", request, env);
     }

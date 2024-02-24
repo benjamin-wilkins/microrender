@@ -47,7 +47,7 @@ async function build() {
     await workerJS.write("const fragments = {\n");
 
     for (let fragment of fragments) {
-      await workerJS.write(`  "${fragment}": await import("./fragments/${fragment}/fragment.js"),\n`);
+      await workerJS.write(`  "${fragment}": (await import("./fragments/${fragment}/fragment.js")).default,\n`);
     }
 
     await workerJS.write("};\n\n");
