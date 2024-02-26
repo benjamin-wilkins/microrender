@@ -29,18 +29,13 @@ class Element {
 }
 
 class ElementHandler {
-  #transforms = []
-
-  do = (transform) => {
-    this.#transforms.push(transform);
+  constructor(callback) {
+    this.callback = callback;
   };
 
   element = async (rewriterElement) => {
     const element = new Element(rewriterElement);
-
-    await Promise.all(this.#transforms.map(async (transform) => {
-      await transform(element);
-    }));
+    this.callback(element)
   };
 }
 
@@ -51,8 +46,8 @@ async function loadFragment(fragment, request, env) {
   if (fragmentJS.server) {
     const rewriter = new HTMLRewriter();
 
-    const $ = (selector) => {
-      const handler = new ElementHandler();
+    const $ = (selector, callback) => {
+      const handler = new ElementHandler(callback);
       rewriter.on(selector, handler);
       return handler;
     }
