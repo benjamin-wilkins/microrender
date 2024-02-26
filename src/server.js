@@ -35,7 +35,7 @@ class ElementHandler {
 
   element = async (rewriterElement) => {
     const element = new Element(rewriterElement);
-    this.callback(element)
+    await this.callback(element)
   };
 }
 
