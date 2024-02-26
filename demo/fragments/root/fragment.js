@@ -16,6 +16,6 @@
 
 export default {
   async server ($) {
-    $("p", (elmt) => {elmt.setTextContent("Hello World!")});
+    $("p", (elmt) => {elmt.text("Hello World!")});
   }
 }

@@ -19,13 +19,39 @@ class Element {
     this.rewriterElement = rewriterElement
   };
 
-  getAttribute = (attr) => {return this.rewriterElement.getAttribute(attr)};
-  hasAttribute = (attr) => {return this.rewriterElement.hasAttribute(attr)};
-  setAttribute = (attr, value) => {this.rewriterElement.setAttribute(attr, value)};
-  removeAttribute = (attr) => {this.rewriterElement.removeAttribute(attr)};
+  getAttribute = (attr) => {
+    return this.rewriterElement.getAttribute(attr)
+  };
 
-  setContent = (content) => {this.rewriterElement.setInnerContent(content, {html: true})};
-  setTextContent = (content) => {this.rewriterElement.setInnerContent(content, {html: false})};
+  hasAttribute = (attr) => {
+    return this.rewriterElement.hasAttribute(attr)
+  };
+
+  setAttribute = (attr, value) => {
+    this.rewriterElement.setAttribute(attr, value)
+  };
+
+  removeAttribute = (attr) => {
+    this.rewriterElement.removeAttribute(attr)
+  };
+
+  attr = (attr, value) => {
+    if (typeof value != "undefined") {
+      this.setAttribute(attr, value);
+    } else if (value == false) {
+      this.removeAttribute(attr);
+    } else {
+      return this.getAttribute(attr);
+    }
+  };
+
+  html = (content) => {
+    this.rewriterElement.setInnerContent(content, {html: true});
+  };
+
+  text = (content) => {
+    this.rewriterElement.setInnerContent(content, {html: false});
+  };
 }
 
 class ElementHandler {
