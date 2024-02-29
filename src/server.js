@@ -75,26 +75,28 @@ async function runJS(fn, fragmentHTML) {
   
   await fn($);
 
-  return rewriter.transform(fragmentHTML);
+  return rewriter.transform(await fragmentHTML);
 };
 
 async function loadFragment(fragment, request, env) {
-  const fragmentJS = fragments[fragment];
-  const fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}/fragment`);
+  const fragmentJS = fragments[fragment].server;
+  let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}/fragment`);
 
-  if (fragmentJS.server) {
-    if (fragmentJS.server.preFragment) {
-      await runJS(fragmentJS.server.preFragment);
+  if (fragmentJS) {
+    if (fragmentJS.preFragment) {
+      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML);
     };
 
-    runJS(($) => {
-      $("microrender-fragment", (elmt) => {
-        elmt.html(loadFragment(elmt.attr("name")));
+    fragmentHTML = await runJS(($) => {
+      $("microrender-fragment", async (elmt) => {
+        let newFragment = await loadFragment(elmt.attr("name"), request, env);
+        newFragment = await newFragment.text();
+        elmt.html(newFragment);
       })
     }, fragmentHTML);
 
-    if (fragmentJS.server.postFragment) {
-      await runJS(fragmentJS.server.postFragment);
+    if (fragmentJS.postFragment) {
+      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML);
     };
   };
 
