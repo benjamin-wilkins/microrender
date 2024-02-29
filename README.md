@@ -24,11 +24,11 @@ These are some planned / implemented ideas:
 
 | Syntax                                                 | Implemented? | Description                                                                                      |
 |--------------------------------------------------------|--------------|--------------------------------------------------------------------------------------------------|
-| $(selector: string, callback: (elmt: Element) => void)          | [x] | Callback based-API using CSS selectors (like JQuery). Runs `callback` for each matching element. |
-| Element.getAttribute(attr) => string                            | [x] | Similar to DOM `Element.getAttribute()`                                                          |
-| Element.hasAttribute(attr) => boolean                           | [x] | Similar to DOM `Element.hasAttribute()`                                                          |
-| Element.setAttribute(attr) => void                              | [x] | Similar to DOM `Element.setAttribute()`                                                          |
-| Element.removeAttribute(attr) => void                           | [x] | Similar to DOM `Element.removeAttribute()                                                        |
-| Element.attr(attr: string[, value: string | boolean]) => void   | [x] | Shorthand; similer to JQuery `.attr()`. Calls (get/has/set/remove)Attribute based on arguments.  |
-| Element.html(content: string) => void                           | [x] | Sets the tag's inner HTML. Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped. |
-| Element.text(content: string) => void                           | [x] | Sets the tag's inner text. Equivalent to DOM `Element.textContent = content`. HTML is escaped.   |
+| $(selector: string, callback: (elmt: Element) => void)           | ✅ | Callback based-API using CSS selectors (like JQuery). Runs `callback` for each matching element. |
+| Element.getAttribute(attr) => string                             | ✅ | Similar to DOM `Element.getAttribute()`                                                          |
+| Element.hasAttribute(attr) => boolean                            | ✅ | Similar to DOM `Element.hasAttribute()`                                                          |
+| Element.setAttribute(attr) => void                               | ✅ | Similar to DOM `Element.setAttribute()`                                                          |
+| Element.removeAttribute(attr) => void                            | ✅ | Similar to DOM `Element.removeAttribute()                                                        |
+| Element.attr(attr: string[, value: string \| boolean]) => void   | ✅ | Shorthand; similer to JQuery `.attr()`. Calls (get/has/set/remove)Attribute based on arguments.  |
+| Element.html(content: string) => void                            | ✅ | Sets the tag's inner HTML. Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped. |
+| Element.text(content: string) => void                            | ✅ | Sets the tag's inner text. Equivalent to DOM `Element.textContent = content`. HTML is escaped.   |
