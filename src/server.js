@@ -52,7 +52,7 @@ class Element {
   text = (content) => {
     this.rewriterElement.setInnerContent(content, {html: false});
   };
-}
+};
 
 class ElementHandler {
   constructor(callback) {
@@ -63,27 +63,43 @@ class ElementHandler {
     const element = new Element(rewriterElement);
     await this.callback(element)
   };
-}
+};
+
+async function runJS(fn, fragmentHTML) {
+  const rewriter = new HTMLRewriter();
+
+  const $ = (selector, callback) => {
+    const handler = new ElementHandler(callback);
+    rewriter.on(selector, handler);
+  };
+  
+  await fn($);
+
+  return rewriter.transform(fragmentHTML);
+};
 
 async function loadFragment(fragment, request, env) {
   const fragmentJS = fragments[fragment];
   const fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}/fragment`);
-  
+
   if (fragmentJS.server) {
-    const rewriter = new HTMLRewriter();
+    if (fragmentJS.server.preFragment) {
+      await runJS(fragmentJS.server.preFragment);
+    };
 
-    const $ = (selector, callback) => {
-      const handler = new ElementHandler(callback);
-      rewriter.on(selector, handler);
-      return handler;
-    }
-    
-    fragmentJS.server($);
+    runJS(($) => {
+      $("microrender-fragment", (elmt) => {
+        elmt.html(loadFragment(elmt.attr("name")));
+      })
+    }, fragmentHTML);
 
-    return rewriter.transform(fragmentHTML);
-  }
+    if (fragmentJS.server.postFragment) {
+      await runJS(fragmentJS.server.postFragment);
+    };
+  };
+
   return fragmentHTML;
-}
+};
 
 export default {
   async fetch(request, env) {
@@ -95,4 +111,4 @@ export default {
       return loadFragment("root", request, env);
     }
   }
-}
+};
