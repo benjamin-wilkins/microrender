@@ -18,8 +18,16 @@
 <html>
   <head>
     <title>Microrender</title>
+    <style>
+    .bordered {
+      border: 1px solid currentColor;
+      margin: 1em;
+      padding: 1em;
+    }
+    </style>
   </head>
-  <body>
+  <body class="bordered">
+    Root
     <p id="root-message"></p>
     <microrender-fragment name="fragment2"></microrender-fragment>
   </body>

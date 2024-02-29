@@ -17,11 +17,11 @@
 export default {
   server: {
     async preFragment ($) {
-      $("#root-message", (elmt) => {elmt.text("Hello World! From root fragment.")});
+      $("#root-message", (elmt) => {elmt.text("Set by root fragment")});
     },
 
     async postFragment ($) {
-      $("#fragment2-message2", (elmt) => {elmt.text("This was set by root fragment, though the html is from fragment 2.")});
+      $("#fragment2-message2", (elmt) => {elmt.text("Set by root fragment")});
     }
   }
 };

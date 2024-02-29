@@ -17,7 +17,7 @@
 export default {
   server: {
     async preFragment ($) {
-      $("#fragment2-message1", (elmt) => {elmt.text("Hello World! From fragment 2")});
+      $("#fragment2-message1", (elmt) => {elmt.text("Set by fragment 2")});
     }
   }
 };
