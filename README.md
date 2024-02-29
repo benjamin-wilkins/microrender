@@ -11,20 +11,24 @@ concepts for the rendering engine:
 
 - There are a set of fragments that each have a modifier - this is JS code resposible for rendering the
   fragment. 
-- The modifier receives the `select` function which it can use to find matching elements using CSS
-  selector syntax (like JQuery).
-- This uses a promise-like syntax to allow multiple elements to be rendered individually. There is no
-  guarantee on which order the elements will arrive in as it depends on the backend API.
-- The element is wrapped to create a set of APIs that work no matter the platform. This is generally
-  kept close to the DOM API, with some quirks straightened out to make it easier to port.
+- The modifier receives the `select` function which it can use to find matching elements using CSS selector
+  syntax (like JQuery).
+- This uses a callback syntax to allow multiple elements to be rendered individually. There is no guarantee
+  on which order the elements will arrive in as it depends on the backend API.
+- The element is wrapped to create a set of APIs that work no matter the platform. This generally makes
+  trade-offs between JQuery-style APIs and DOM APIs, but attempts to be more consistent than the DOM.
 
-Currently, a limited subset of functionality is/will be available on the `Element` object:
+These are some planned / implemented ideas:
 
-| `microrender.Element`       | `DOM Element`               |
-| ----------------------------- | ----------------------------- |
-| `getAttribute(attr)`        | `getAttribute(attr)`        |
-| `hasAttribute(attr)`        | `hasAttribute(attr)`        |
-| `setAttribute(attr, value)` | `setAttribute(attr, value)` |
-| `removeAttribute(attr)`     | `removeAttribute(attr)`     |
-| `setContent(content)`       | `innerHTML = content`       |
-| `setTextContent(content)`   | `textContent = content`     |
+## Element APIs
+
+| Syntax                                                 | Implemented? | Description                                                                                      |
+|--------------------------------------------------------|--------------|--------------------------------------------------------------------------------------------------|
+| $(selector: string, callback: (elmt: Element) => void)          | [x] | Callback based-API using CSS selectors (like JQuery). Runs `callback` for each matching element. |
+| Element.getAttribute(attr) => string                            | [x] | Similar to DOM `Element.getAttribute()`                                                          |
+| Element.hasAttribute(attr) => boolean                           | [x] | Similar to DOM `Element.hasAttribute()`                                                          |
+| Element.setAttribute(attr) => void                              | [x] | Similar to DOM `Element.setAttribute()`                                                          |
+| Element.removeAttribute(attr) => void                           | [x] | Similar to DOM `Element.removeAttribute()                                                        |
+| Element.attr(attr: string[, value: string | boolean]) => void   | [x] | Shorthand; similer to JQuery `.attr()`. Calls (get/has/set/remove)Attribute based on arguments.  |
+| Element.html(content: string) => void                           | [x] | Sets the tag's inner HTML. Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped. |
+| Element.text(content: string) => void                           | [x] | Sets the tag's inner text. Equivalent to DOM `Element.textContent = content`. HTML is escaped.   |
