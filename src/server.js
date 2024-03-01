@@ -65,12 +65,29 @@ class ElementHandler {
   };
 };
 
-async function runJS(fn, fragmentHTML) {
+async function runJS(fn, fragmentHTML, request, env) {
   const rewriter = new HTMLRewriter();
 
   const $ = (selector, callback) => {
     const handler = new ElementHandler(callback);
     rewriter.on(selector, handler);
+  };
+
+  $.url = (newURL, status) => {
+
+    if (typeof newURL != "undefined") {
+      return Response.redirect(newURL, status);
+    };
+
+    const currentURL = new URL(request.url);
+
+    if (currentURL.pathname.startsWith("/fragment/")) {
+      const path = currentURL.pathname.split("/");
+      path.splice(1, 2);
+      currentURL.pathname = path.join("/");
+    };
+
+    return currentURL;
   };
   
   await fn($);
@@ -84,7 +101,7 @@ async function loadFragment(fragment, request, env) {
 
   if (fragmentJS) {
     if (fragmentJS.preFragment) {
-      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML);
+      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML, request, env);
     };
 
     fragmentHTML = await runJS(($) => {
@@ -93,10 +110,10 @@ async function loadFragment(fragment, request, env) {
         newFragment = await newFragment.text();
         elmt.html(newFragment);
       })
-    }, fragmentHTML);
+    }, fragmentHTML, request, env);
 
     if (fragmentJS.postFragment) {
-      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML);
+      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML, request, env);
     };
   };
 

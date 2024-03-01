@@ -18,10 +18,11 @@ export default {
   server: {
     async preFragment ($) {
       $("#root-message", (elmt) => {elmt.text("Set by root fragment")});
+      $("#root-url", (elmt) => {elmt.text(`The current URL is: ${$.url().toString()}`)})
     },
 
     async postFragment ($) {
-      $("#fragment2-message2", (elmt) => {elmt.text("Set by root fragment")});
+      $("#fragment2-message2", (elmt) => {elmt.text("Set by root fragment in child fragment")});
     }
   }
 };

@@ -42,7 +42,7 @@ These are some planned / implemented ideas:
 
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
-| `$.fetch(url: string[, options: Object])` => `Promise<Response>`      | ⬜ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
-| `$.url([url: string \| URL])` => `URL`                                | ⬜ | Gets/changes current URL - redirects/reruns all fragments using the new URL.              |
+| `$.fetch(url: any   [, options: Object])` => `Promise<Response>`      | ⬜ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
+| `$.url([url: string \| URL])` => `URL`                                | ✅ | Gets/changes current URL - redirects/reruns all fragments using the new URL.              |
 | `$.status([code])` => `number`                                        | ⬜ | Changes the current status - reruns all fragments using the status code.                  |
 | `$.interval(fn: (*args) => boolean, ms: number[, *args])` => `void`   | ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
