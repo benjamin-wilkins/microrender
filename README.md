@@ -24,25 +24,25 @@ These are some planned / implemented ideas:
 
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
-| `$(selector: string, callback: (elmt: Element) => void)`              | ✅ | JQuery-like selector API. Runs `callback` for each matching element.                     |
-| `Element.getAttribute(attr) => string`                                | ✅ | Similar to DOM `Element.getAttribute()`                                                  |
-| `Element.hasAttribute(attr) => boolean`                               | ✅ | Similar to DOM `Element.hasAttribute()`                                                  |
-| `Element.setAttribute(attr) => void`                                  | ✅ | Similar to DOM `Element.setAttribute()`                                                  |
-| `Element.removeAttribute(attr) => void`                               | ✅ | Similar to DOM `Element.removeAttribute()`                                               |
-| `Element.attr(attr: string[, value: string \| boolean]) => string`    | ✅ | Shorthand for (get/set/remove)Attribute; similer to JQuery `.attr()`.                    |
-| `Element.html(content: string) => void`                               | ✅ | Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped.                    |
-| `Element.text(content: string) => void`                               | ✅ | Equivalent to DOM `Element.textContent = content`. HTML is escaped.                      |
-| `Element.style(prop: string[, value: string \| boolean]) => string`   | ⬜ | Modify/read the style attribute/property of an element.                                  |
-| `Element.class(class: string[, value: bool]) => boolean`              | ⬜ | Modify/read the class attribute/property of an element.                                  |
-| `Element.toggleClass(class: string) => boolean`                       | ⬜ | Toggle the class attribute/property of an element.                                       |
-| `Element.value([value: string]) => string`                            | ⬜ | Modify/read the value attribute/property of an element.                                  |
-| `Element.checked([checked: boolean]) => boolean`                      | ⬜ | Modify/read the checked attribute/property of an element.                                |
+| `$(selector: string, callback: (elmt: Element) => void)` => `void`    | ✅ | JQuery-like selector API. Runs `callback` for each matching element.                     |
+| `Element.getAttribute(attr)` => `string`                              | ✅ | Similar to DOM `Element.getAttribute()`                                                  |
+| `Element.hasAttribute(attr)` => `boolean`                             | ✅ | Similar to DOM `Element.hasAttribute()`                                                  |
+| `Element.setAttribute(attr)` => `void`                                | ✅ | Similar to DOM `Element.setAttribute()`                                                  |
+| `Element.removeAttribute(attr)` => `void`                             | ✅ | Similar to DOM `Element.removeAttribute()`                                               |
+| `Element.attr(attr: string[, value: string \| boolean])` => `string`  | ✅ | Shorthand for (get/set/remove)Attribute; similer to JQuery `.attr()`.                    |
+| `Element.html(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped.                    |
+| `Element.text(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.textContent = content`. HTML is escaped.                      |
+| `Element.style(prop: string[, value: string \| boolean])` => `string` | ⬜ | Modify/read the style attribute/property of an element.                                  |
+| `Element.class(class: string[, value: bool])` => `boolean`            | ⬜ | Modify/read the class attribute/property of an element.                                  |
+| `Element.toggleClass(class: string)` => `boolean`                     | ⬜ | Toggle the class attribute/property of an element.                                       |
+| `Element.value([value: string])` => `string`                          | ⬜ | Modify/read the value attribute/property of an element.                                  |
+| `Element.checked([checked: boolean])` => `boolean`                    | ⬜ | Modify/read the checked attribute/property of an element.                                |
 
 ## Other APIs
 
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
-| `$.fetch(url: string[, options: Object]) => Promise<Response>`        | ⬜ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
-| `$.url([url: string \| URL]) => URL`                                  | ⬜ | Gets/changes current URL - redirects/reruns all fragments using the new URL.              |
-| `$.status([code]) => number`                                          | ⬜ | Changes the current status - reruns all fragments using the status code.                  |
-| `$.interval(fn: (*args) => boolean, ms: number[, *args: any[]])`      | ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
+| `$.fetch(url: string[, options: Object])` => `Promise<Response>`      | ⬜ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
+| `$.url([url: string \| URL])` => `URL`                                | ⬜ | Gets/changes current URL - redirects/reruns all fragments using the new URL.              |
+| `$.status([code])` => `number`                                        | ⬜ | Changes the current status - reruns all fragments using the status code.                  |
+| `$.interval(fn: (*args) => boolean, ms: number[, *args])` => `void`   | ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
