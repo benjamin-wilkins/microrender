@@ -17,6 +17,10 @@
 export default {
   server: {
     async preFragment ($) {
+      if ($.url().pathname == "/redirect-me") {
+        $.url("/")
+      };
+
       $("#root-message", (elmt) => {elmt.text("Set by root fragment")});
       $("#root-url", (elmt) => {elmt.text(`The current URL is: ${$.url().toString()}`)})
     },

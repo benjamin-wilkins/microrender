@@ -74,17 +74,19 @@ async function runJS(fn, fragmentHTML, request, env) {
   };
 
   $.url = (newURL, status) => {
-
-    if (typeof newURL != "undefined") {
-      return Response.redirect(newURL, status);
-    };
-
     const currentURL = new URL(request.url);
 
     if (currentURL.pathname.startsWith("/fragment/")) {
       const path = currentURL.pathname.split("/");
       path.splice(1, 2);
       currentURL.pathname = path.join("/");
+    };
+
+    if (typeof newURL != "undefined") {
+      if (typeof newURL == "string") {
+        newURL = new URL(newURL, currentURL);
+      };
+      fragmentHTML = Response.redirect(newURL, status);
     };
 
     return currentURL;
