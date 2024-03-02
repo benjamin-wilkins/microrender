@@ -17,8 +17,23 @@
 export default {
   server: {
     async preFragment ($) {
-      if ($.url().pathname == "/redirect-me") {
-        $.url("/")
+      const path = $.url().pathname;
+      const error = $.error();
+
+      if (error >= 400) {
+        $("#root-content", (elmt) => {elmt.attr("name", "error")});
+      } else {
+        switch (path) {
+          case "/":
+            $("#root-content", (elmt) => {elmt.attr("name", "home")});
+            break
+          case "/redirect":
+            $.url("/");
+          case "/error":
+            throw new Error();
+          default:
+            $.error(404);
+        };
       };
 
       $("#root-message", (elmt) => {elmt.text("Set by root fragment")});

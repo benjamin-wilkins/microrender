@@ -1,4 +1,4 @@
-<!--
+/*
   This file is part of a demo of MicroRender, a basic rendering framework.
   Copyright (C) 2023-2024 Benjamin Wilkins
 
@@ -12,10 +12,12 @@
 
   You should have received a copy of the GNU Lesser General Public License along with MicroRender.
   If not, see <https://www.gnu.org/licenses/>.
--->
+*/
 
-<div class="bordered">
-  Fragment2
-  <p id="fragment2-message1"></p>
-  <p id="fragment2-message2"></p>
-</div>
+export default {
+  server: {
+    async preFragment ($) {
+      $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
+    }
+  }
+};

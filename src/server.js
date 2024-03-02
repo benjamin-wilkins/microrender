@@ -14,6 +14,13 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
+class Interrupt extends Error {
+  constructor(name, cause) {
+    super("", {cause: cause});
+    this.name = name;
+  };
+};
+
 class Element {
   constructor(rewriterElement) {
     this.rewriterElement = rewriterElement
@@ -42,7 +49,7 @@ class Element {
       this.removeAttribute(attr);
     } else {
       return this.getAttribute(attr);
-    }
+    };
   };
 
   html = (content) => {
@@ -86,10 +93,18 @@ async function runJS(fn, fragmentHTML, request, env) {
       if (typeof newURL == "string") {
         newURL = new URL(newURL, currentURL);
       };
-      fragmentHTML = Response.redirect(newURL, status);
+      throw new Interrupt("redirectResponse", Response.redirect(newURL, status));
     };
 
     return currentURL;
+  };
+
+  $.error = (code) => {
+    if (typeof code != "undefined") {
+      throw new Interrupt("errorCode", code)
+    };
+
+    return request._microrender.status;
   };
   
   await fn($);
@@ -126,10 +141,64 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
+    if (!request._microrender) {
+      request._microrender = {
+        status: 200
+      };
+    };
+
+    const catchError = async (e) => {
+      if (e instanceof Interrupt) {
+
+        switch (e.name) {
+          case "redirectResponse":
+            return e.cause;
+
+          case "errorCode":
+
+            if (request._microrender.status == 500 && e.cause == 500) {
+              return new Response(null, {status: 500});
+            }
+
+            request._microrender.status = e.cause;
+            if (200 <= request._microrender.status >= 299 || !url.pathname.startsWith("/fragment/")) {
+              const response = await this.fetch(request, env);
+              return new Response(response.body, {
+                status: request._microrender.status,
+                statusText: "",
+                headers: response.headers
+              });
+            } else {
+              return new Response(null, {status: request._microrender.status});
+            };
+        };
+
+      } else {
+        console.error("Caught error:");
+        console.error(e);
+
+        if (request._microrender.status == 500) {
+          return new Response(null, {status: request._microrender.status});
+        }
+
+        request._microrender.status = 500;
+        if (!url.pathname.startsWith("/fragment/")) {
+          const response = await this.fetch(request, env);
+          return new Response(response.body, {
+            status: request._microrender.status,
+            statusText: "",
+            headers: response.headers
+          });
+        } else {
+          return new Response(null, {status: request._microrender.status});
+        }
+      };
+    };
+
     if (url.pathname.startsWith("/fragment/")) {
-      return loadFragment(url.pathname.split("/")[2], request, env);
+      return loadFragment(url.pathname.split("/")[2], request, env).catch(catchError);
     } else {
-      return loadFragment("root", request, env);
-    }
+      return loadFragment("root", request, env).catch(catchError);
+    };
   }
 };
