@@ -83,7 +83,7 @@ async function runJS(fn, fragmentHTML, request, env) {
   $.url = (newURL, status) => {
     const currentURL = new URL(request.url);
 
-    if (currentURL.pathname.startsWith("/fragment/")) {
+    if (currentURL.pathname.startsWith("/_fragment/")) {
       const path = currentURL.pathname.split("/");
       path.splice(1, 2);
       currentURL.pathname = path.join("/");
@@ -161,7 +161,7 @@ export default {
             }
 
             request._microrender.status = e.cause;
-            if (200 <= request._microrender.status >= 299 || !url.pathname.startsWith("/fragment/")) {
+            if (200 <= request._microrender.status >= 299 || !url.pathname.startsWith("/_fragment/")) {
               const response = await this.fetch(request, env);
               return new Response(response.body, {
                 status: request._microrender.status,
@@ -179,10 +179,10 @@ export default {
 
         if (request._microrender.status == 500) {
           return new Response(null, {status: request._microrender.status});
-        }
+        };
 
         request._microrender.status = 500;
-        if (!url.pathname.startsWith("/fragment/")) {
+        if (!url.pathname.startsWith("/_fragment/")) {
           const response = await this.fetch(request, env);
           return new Response(response.body, {
             status: request._microrender.status,
@@ -191,11 +191,11 @@ export default {
           });
         } else {
           return new Response(null, {status: request._microrender.status});
-        }
+        };
       };
     };
 
-    if (url.pathname.startsWith("/fragment/")) {
+    if (url.pathname.startsWith("/_fragment/")) {
       return loadFragment(url.pathname.split("/")[2], request, env).catch(catchError);
     } else {
       return loadFragment("root", request, env).catch(catchError);
