@@ -14,7 +14,7 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Interrupt } from "./interrupt.js";
+import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
 
 async function loadFragment(fragment, request, env, fragments) {
@@ -50,64 +50,18 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    const catchError = async (e) => {
-      if (e instanceof Interrupt) {
-
-        switch (e.name) {
-          case "redirectResponse":
-            return e.cause;
-
-          case "errorCode":
-
-            if (request._microrender.status == 500 && e.cause == 500) {
-              return new Response(null, {status: 500});
-            }
-
-            request._microrender.status = e.cause;
-            if (200 <= request._microrender.status >= 299 || !url.pathname.startsWith("/_fragment/")) {
-              const response = await this.fetch(request, env);
-              return new Response(response.body, {
-                status: request._microrender.status,
-                statusText: "",
-                headers: response.headers
-              });
-            } else {
-              return new Response(null, {status: request._microrender.status});
-            };
-        };
-
-      } else {
-        console.error("Caught error:");
-        console.error(e);
-
-        if (request._microrender.status == 500) {
-          return new Response(null, {status: request._microrender.status});
-        };
-
-        request._microrender.status = 500;
-        if (!url.pathname.startsWith("/_fragment/")) {
-          const response = await this.fetch(request, env);
-          return new Response(response.body, {
-            status: request._microrender.status,
-            statusText: "",
-            headers: response.headers
-          });
-        } else {
-          return new Response(null, {status: request._microrender.status});
-        };
-      };
-    };
-
     if (!request._microrender) {
       request._microrender = {
         status: 200
       };
     };
 
+    const errorCatcher = new ErrorCatcher(request, url, env);
+
     if (url.pathname.startsWith("/_fragment/")) {
-      return loadFragment(url.pathname.split("/")[2], request, env, this.fragments).catch(catchError);
+      return loadFragment(url.pathname.split("/")[2], request, env, this.fragments).catch(errorCatcher.catchError);
     } else {
-      return loadFragment("root", request, env, this.fragments).catch(catchError);
+      return loadFragment("root", request, env, this.fragments).catch(errorCatcher.catchError);
     };
   }
 };
