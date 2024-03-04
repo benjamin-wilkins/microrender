@@ -14,105 +14,10 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-class Interrupt extends Error {
-  constructor(name, cause) {
-    super("", {cause: cause});
-    this.name = name;
-  };
-};
+import { Interrupt } from "./interrupt.js";
+import { runJS } from "./runjs.js";
 
-class Element {
-  constructor(rewriterElement) {
-    this.rewriterElement = rewriterElement
-  };
-
-  getAttribute = (attr) => {
-    return this.rewriterElement.getAttribute(attr)
-  };
-
-  hasAttribute = (attr) => {
-    return this.rewriterElement.hasAttribute(attr)
-  };
-
-  setAttribute = (attr, value) => {
-    this.rewriterElement.setAttribute(attr, value)
-  };
-
-  removeAttribute = (attr) => {
-    this.rewriterElement.removeAttribute(attr)
-  };
-
-  attr = (attr, value) => {
-    if (typeof value != "undefined") {
-      this.setAttribute(attr, value);
-    } else if (value == false) {
-      this.removeAttribute(attr);
-    } else {
-      return this.getAttribute(attr);
-    };
-  };
-
-  html = (content) => {
-    this.rewriterElement.setInnerContent(content, {html: true});
-  };
-
-  text = (content) => {
-    this.rewriterElement.setInnerContent(content, {html: false});
-  };
-};
-
-class ElementHandler {
-  constructor(callback) {
-    this.callback = callback;
-  };
-
-  element = async (rewriterElement) => {
-    const element = new Element(rewriterElement);
-    await this.callback(element)
-  };
-};
-
-async function runJS(fn, fragmentHTML, request, env) {
-  const rewriter = new HTMLRewriter();
-
-  const $ = (selector, callback) => {
-    const handler = new ElementHandler(callback);
-    rewriter.on(selector, handler);
-  };
-
-  $.url = (newURL, status) => {
-    const currentURL = new URL(request.url);
-
-    if (currentURL.pathname.startsWith("/_fragment/")) {
-      const path = currentURL.pathname.split("/");
-      path.splice(1, 2);
-      currentURL.pathname = path.join("/");
-    };
-
-    if (typeof newURL != "undefined") {
-      if (typeof newURL == "string") {
-        newURL = new URL(newURL, currentURL);
-      };
-      throw new Interrupt("redirectResponse", Response.redirect(newURL, status));
-    };
-
-    return currentURL;
-  };
-
-  $.error = (code) => {
-    if (typeof code != "undefined") {
-      throw new Interrupt("errorCode", code)
-    };
-
-    return request._microrender.status;
-  };
-  
-  await fn($);
-
-  return rewriter.transform(await fragmentHTML);
-};
-
-async function loadFragment(fragment, request, env) {
+async function loadFragment(fragment, request, env, fragments) {
   const fragmentJS = fragments[fragment].server;
   let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}/fragment`);
 
@@ -123,7 +28,7 @@ async function loadFragment(fragment, request, env) {
 
     fragmentHTML = await runJS(($) => {
       $("microrender-fragment", async (elmt) => {
-        let newFragment = await loadFragment(elmt.attr("name"), request, env);
+        let newFragment = await loadFragment(elmt.attr("name"), request, env, fragments);
         newFragment = await newFragment.text();
         elmt.html(newFragment);
       })
@@ -196,9 +101,9 @@ export default {
     };
 
     if (url.pathname.startsWith("/_fragment/")) {
-      return loadFragment(url.pathname.split("/")[2], request, env).catch(catchError);
+      return loadFragment(url.pathname.split("/")[2], request, env, this.fragments).catch(catchError);
     } else {
-      return loadFragment("root", request, env).catch(catchError);
+      return loadFragment("root", request, env, this.fragments).catch(catchError);
     };
   }
 };

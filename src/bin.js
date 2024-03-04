@@ -25,6 +25,10 @@ const command = process.argv[2];
 const cwd = process.cwd();
 const microrender_dir = path.dirname(fileURLToPath(import.meta.url));
 
+const serverImport = `import { init } from "${path.join(microrender_dir, "server/init.js")}";`
+
+const serverExport = `export default init(fragments);`;
+
 const help = `
 Microrender builder
 
@@ -38,29 +42,30 @@ Available commands:
 
 async function build() {
   let fragments = await fs.readdir(path.join(cwd, "fragments/"));
-  let serverJS = await fs.readFile(path.join(microrender_dir, "server.js"));
   let workerJS;
 
   try {
     workerJS = await fs.open(path.join(cwd, "_worker.js"), "w");
 
-    await workerJS.write("const fragments = {\n");
+    await workerJS.write(serverImport);
+
+    await workerJS.write("\n\nconst fragments = {\n");
 
     for (let fragment of fragments) {
       await workerJS.write(`  "${fragment}": (await import("./fragments/${fragment}/fragment.js")).default,\n`);
-    }
+    };
 
     await workerJS.write("};\n\n");
-    await workerJS.write(serverJS);
+    await workerJS.write(serverExport);
 
   } finally {
     workerJS.close();
-  }
-}
+  };
+};
 
 async function clean() {
-  await fs.rm(path.join(cwd, "_worker.js"))
-}
+  await fs.rm(path.join(cwd, "_worker.js"));
+};
 
 if (command == undefined | command == "help") {
   console.log(help);
@@ -71,4 +76,4 @@ if (command == undefined | command == "help") {
 } else {
   console.log(`Unrecognised command: ${command}`);
   console.log(help);
-}
+};
