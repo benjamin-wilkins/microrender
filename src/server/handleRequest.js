@@ -46,11 +46,9 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (!request._microrender) {
-      request._microrender = {
-        status: 200
-      };
-    };
+    if (url.pathname.startsWith("/assets/")) {
+      return env.ASSETS.fetch(request);
+    }
 
     const catchError = async (e) => {
       if (e instanceof Interrupt) {
@@ -97,6 +95,12 @@ export default {
         } else {
           return new Response(null, {status: request._microrender.status});
         };
+      };
+    };
+
+    if (!request._microrender) {
+      request._microrender = {
+        status: 200
       };
     };
 
