@@ -36,7 +36,7 @@ These are some planned / implemented ideas:
 | `Element.style(prop: string, ?value: string)` => `string` \| `void`   | ⬜ | Modify/read the style attribute/property of an element.                                  |
 | `Element.class(class: string, ?value: bool)` => `boolean`             | ⬜ | Modify/read the class attribute/property of an element.                                  |
 | `Element.toggleClass(class: string)` => `boolean`                     | ⬜ | Toggle the class attribute/property of an element.                                       |
-| `Element.value(?value: string)` => `string`                           | ⬜ | Modify/read the value attribute/property of an element.                                  |
+| `Element.value(?value: string)` => `string`                           | ✅ | Modify/read the value attribute/property of an element.                                  |
 
 ## Other APIs
 

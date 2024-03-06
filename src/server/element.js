@@ -54,6 +54,14 @@ export class Element {
     };
   };
 
+  value = (value) => {
+    if (typeof value == "undefined") {
+      return this.getAttribute("value");
+    } else {
+      this.setAttribute("value", value)
+    }
+  };
+
   html = (content) => {
     this.rewriterElement.setInnerContent(content, {html: true});
   };
