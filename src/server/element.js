@@ -37,12 +37,20 @@ export class Element {
   };
 
   attr = (attr, value) => {
-    if (typeof value != "undefined") {
+    if (typeof value == "undefined") {
+      return this.getAttribute(attr, value);
+    } else {
       this.setAttribute(attr, value);
+    };
+  };
+
+  boolean = (attr, value) => {
+    if (value == true) {
+      this.setAttribute(attr, attr);
     } else if (value == false) {
       this.removeAttribute(attr);
     } else {
-      return this.getAttribute(attr);
+      return this.hasAttribute(attr)
     };
   };
 
