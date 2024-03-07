@@ -29,13 +29,15 @@ These are some planned / implemented ideas:
 | `Element.hasAttribute(attr)` => `boolean`                             | ✅ | Similar to DOM `Element.hasAttribute()`                                                  |
 | `Element.setAttribute(attr)` => `void`                                | ✅ | Similar to DOM `Element.setAttribute()`                                                  |
 | `Element.removeAttribute(attr)` => `void`                             | ✅ | Similar to DOM `Element.removeAttribute()`                                               |
-| `Element.attr(attr: string, ?value: string)` => `string` \| `void`    | ✅ | Shorthand for (get/set/remove)Attribute; similer to JQuery `.attr()`.                    |
+| `Element.attr(attr: string, ?value: string)` => `string` \| `void`    | ✅ | Shorthand for `(get/set/remove)Attribute`; similer to JQuery `.attr()`.                  |
 | `Element.boolean(attr: string, ?value: string)` => `boolean` \| `void`| ✅ | Similar to `.attr()` but simplifies working with boolean attributes.                     |
 | `Element.html(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped.                    |
 | `Element.text(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.textContent = content`. HTML is escaped.                      |
 | `Element.style(prop: string, ?value: string)` => `string` \| `void`   | ⬜ | Modify/read the style attribute/property of an element.                                  |
-| `Element.class(class: string, ?value: bool)` => `boolean`             | ⬜ | Modify/read the class attribute/property of an element.                                  |
-| `Element.toggleClass(class: string)` => `boolean`                     | ⬜ | Toggle the class attribute/property of an element.                                       |
+| `Element.getClass(class: string)` => `boolean`                        | ✅ | Similar to DOM `Element.classList.contains()`                                            |
+| `Element.setClass(class: string, value: boolean)` => `void`           | ✅ | Similar to DOM `Element.classList.add()` and `Element.classList.remove()`                |
+| `Element.toggleClass(class: string)` => `void`                        | ✅ | Similar to DOM `Element.classList.toggle()`                                              |
+| `Element.class(class: string, ?value: bool)` => `boolean`             | ✅ | Shorthand for `(get/set)Class`                                                           |
 | `Element.value(?value: string)` => `string`                           | ✅ | Modify/read the value attribute/property of an element.                                  |
 
 ## Other APIs
