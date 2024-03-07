@@ -62,31 +62,31 @@ export class Element {
     this.rewriterElement.setInnerContent(content, {html: false});
   };
 
-  getClass = (class) => {
-    return this.getAttribute("class").split(" ").includes(class);
+  getClass = ($class) => {
+    return this.getAttribute("class").split(" ").includes($class);
   };
 
-  setClass = (class, value) => {
+  setClass = ($class, value) => {
     let classList = this.getAttribute("class").split(" ");
 
-    if (value == true && !classList.includes(class)) {
-      classList.push(class);
+    if (value == true && !classList.includes($class)) {
+      classList.push($class);
       this.setAttribute("class", classList.join(" "));
-    } else if (value == false && classList.includes(class)) {
-      classList = classList.filter((value, index, arr) => {value != class});
+    } else if (value == false && classList.includes($class)) {
+      classList = classList.filter((value, index, arr) => {value != $class});
       this.setAttribute("class", classList.join(" "));
     };
   };
 
-  toggleClass = (class) => {
-    this.setClass(class, !this.getClass(class));
+  toggleClass = ($class) => {
+    this.setClass($class, !this.getClass($class));
   };
 
-  class = (class, value) => {
+  class = ($class, value) => {
     if (typeof value == "undefined") {
-      return this.getClass(class);
+      return this.getClass($class);
     } else {
-      this.setClass(class, value);
+      this.setClass($class, value);
     };
   };
 
