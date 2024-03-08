@@ -62,6 +62,7 @@ export class Element {
   };
 
   getStyle = (property) => {
+    if (!this.hasAttribute("style")) return;
     for (const declaration of this.getAttribute("style").split(";")) {
       if (declaration.split(":")[0].trim() == property) {
         return declaration.split(":")[1].trim();
@@ -72,9 +73,11 @@ export class Element {
   setStyle = (property, value) => {
     const styles = new Map();
 
-    for (const declaration of this.getAttribute("style").split(";")) {
-      styles.set(declaration.split(":")[0].trim(), declaration.split(":")[1].trim());
-    };
+    if (this.hasAttribute("style")) {
+      for (const declaration of this.getAttribute("style").split(";")) {
+        styles.set(declaration.split(":")[0].trim(), declaration.split(":")[1].trim());
+      };
+    }
 
     if (value = "") {
       styles.delete(property);
@@ -104,6 +107,7 @@ export class Element {
   };
 
   getClass = ($class) => {
+    if (!this.hasAttribute("class")) return false;
     return this.getAttribute("class").split(" ").includes($class);
   };
 
