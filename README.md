@@ -25,7 +25,7 @@ These are some planned / implemented ideas:
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
 | `$(selector: string, callback: (elmt: Element) => void)` => `void`    | ✅ | JQuery-like selector API. Runs `callback` for each matching element.                     |
-| `Element.getAttribute(attr)` => `string` | `void`                     | ✅ | Similar to DOM `Element.getAttribute()`                                                  |
+| `Element.getAttribute(attr)` => `string` \| `void`                    | ✅ | Similar to DOM `Element.getAttribute()`                                                  |
 | `Element.hasAttribute(attr)` => `boolean`                             | ✅ | Similar to DOM `Element.hasAttribute()`                                                  |
 | `Element.setAttribute(attr)` => `void`                                | ✅ | Similar to DOM `Element.setAttribute()`                                                  |
 | `Element.removeAttribute(attr)` => `void`                             | ✅ | Similar to DOM `Element.removeAttribute()`                                               |
@@ -33,7 +33,7 @@ These are some planned / implemented ideas:
 | `Element.boolean(attr: string, ?value: string)` => `boolean` \| `void`| ✅ | Similar to `.attr()` but simplifies working with boolean attributes.                     |
 | `Element.html(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped.                    |
 | `Element.text(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.textContent = content`. HTML is escaped.                      |
-| `Element.getStyle(property: string)` => `string` | `void`             | ✅ | Get a CSS property in the inline style tag.                                              |
+| `Element.getStyle(property: string)` => `string` \| `void`            | ✅ | Get a CSS property in the inline style tag.                                              |
 | `Element.setStyle(property: string, value: string)` => `void`         | ✅ | Set a CSS property in the inline style tag. A blank string removes it.                   |
 | `Element.removeStyle(property: string)` => `void`                     | ✅ | Remove a CSS property in the inline style tag.                                           |
 | `Element.style(property: string, ?value: string)` => `string` \| `void`| ✅ | Shorthand for `(get/set)Style()`. Similar to JQuery `.css()` but uses inline styles.    |
