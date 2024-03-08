@@ -33,11 +33,14 @@ These are some planned / implemented ideas:
 | `Element.boolean(attr: string, ?value: string)` => `boolean` \| `void`| ✅ | Similar to `.attr()` but simplifies working with boolean attributes.                     |
 | `Element.html(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped.                    |
 | `Element.text(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.textContent = content`. HTML is escaped.                      |
-| `Element.style(prop: string, ?value: string)` => `string` \| `void`   | ⬜ | Modify/read the style attribute/property of an element.                                  |
+| `Element.getStyle(property: string)` => `string`                      | ✅ | Get a CSS property in the inline style tag.                                              |
+| `Element.setStyle(property: string, value: string)` => `void`         | ✅ | Set a CSS property in the inline style tag. A blank string removes it.                   |
+| `Element.removeStyle(property: string)` => `void`                     | ✅ | Remove a CSS property in the inline style tag.                                           |
+| `Element.style(property: string, ?value: string)` => `string` \| `void`| ✅ | Shorthand for `(get/set)Style()`. Similar to JQuery `.css()` but uses inline styles.    |
 | `Element.getClass($class: string)` => `boolean`                       | ✅ | Similar to DOM `Element.classList.contains()`                                            |
 | `Element.setClass($class: string, value: boolean)` => `void`          | ✅ | Similar to DOM `Element.classList.add()` and `Element.classList.remove()`                |
 | `Element.toggleClass($class: string)` => `void`                       | ✅ | Similar to DOM `Element.classList.toggle()`                                              |
-| `Element.class($class: string, ?value: bool)` => `boolean`            | ✅ | Shorthand for `(get/set)Class`                                                           |
+| `Element.class($class: string, ?value: bool)` => `boolean`            | ✅ | Shorthand for `(get/set)Class()`                                                         |
 | `Element.value(?value: string)` => `string`                           | ✅ | Modify/read the value attribute/property of an element.                                  |
 
 ## Other APIs

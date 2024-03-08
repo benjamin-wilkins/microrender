@@ -14,7 +14,6 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-
 export class Element {
   constructor(rewriterElement) {
     this.rewriterElement = rewriterElement
@@ -60,6 +59,48 @@ export class Element {
 
   text = (content) => {
     this.rewriterElement.setInnerContent(content, {html: false});
+  };
+
+  getStyle = (property) => {
+    for (const declaration of this.getAttribute("style").split(";")) {
+      if (declaration.split(":")[0].trim() == property) {
+        return declaration.split(":")[1].trim();
+      };
+    };
+  };
+
+  setStyle = (property, value) => {
+    const styles = new Map();
+
+    for (const declaration of this.getAttribute("style").split(";")) {
+      styles.set(declaration.split(":")[0].trim(), declaration.split(":")[1].trim());
+    };
+
+    if (value = "") {
+      styles.delete(property);
+    } else {
+      styles.set(property, value);
+    };
+
+    let styleValue = "";
+
+    for (const [property, value] of styles) {
+      styleValue += `${property}: ${value};`;
+    };
+
+    this.setAttribute("style", styleValue);
+  };
+
+  removeStyle = (property) => {
+    this.setStyle(property, "");
+  };
+
+  style = (property, value) => {
+    if (typeof value == "undefined") {
+      return this.getStyle(property);
+    } else {
+      this.setStyle(property, value);
+    };
   };
 
   getClass = ($class) => {
