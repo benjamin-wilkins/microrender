@@ -14,10 +14,8 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export default {
-  server: {
-    async preFragment ($) {
-      $("#fragment2-message1", (elmt) => {elmt.text("Set by home fragment")});
-    }
+export const server = {
+  async preFragment ($) {
+    $("#fragment2-message1", (elmt) => {elmt.text("Set by home fragment")});
   }
 };

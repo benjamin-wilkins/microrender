@@ -14,10 +14,8 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export default {
-  server: {
-    async preFragment ($) {
-      $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
-    }
+export const server = {
+  async preFragment ($) {
+    $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
   }
 };

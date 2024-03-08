@@ -140,7 +140,7 @@ export class Element {
       return this.getAttribute("value");
     } else {
       this.setAttribute("value", value)
-    }
+    };
   };
 };
 
