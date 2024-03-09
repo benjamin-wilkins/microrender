@@ -52,7 +52,11 @@ export default {
 
     if (!request._microrender) {
       request._microrender = {
-        status: 200
+        status: 200,
+      };
+
+      if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
+        request._microrender.formData = await request.formData();
       };
     };
 

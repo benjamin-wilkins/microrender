@@ -51,6 +51,12 @@ export async function runJS(fn, fragmentHTML, request, env) {
 
     return request._microrender.status;
   };
+
+  if (request._microrender.formData) {
+    $.form = (field) => {
+      return request._microrender.formData.get(field);
+    };
+  };
   
   await fn($);
 
