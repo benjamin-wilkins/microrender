@@ -37,7 +37,9 @@ export class Element {
 
   attr = (attr, value) => {
     if (typeof value == "undefined") {
-      return this.getAttribute(attr, value);
+      return this.getAttribute(attr);
+    } else if (value == false) {
+      this.removeAttribute(attr);
     } else {
       this.setAttribute(attr, value);
     };
