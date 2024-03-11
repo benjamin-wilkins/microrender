@@ -14,7 +14,7 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Interrupt } from "./interrupt.js";
+import { Interrupt } from "./../common/interrupt.js";
 import { ElementHandler } from "./element.js";
 
 export async function runJS(fn, fragmentHTML, request, env) {
