@@ -18,8 +18,8 @@ import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
 
 async function loadFragment(fragment, request, env, fragments) {
-  const fragmentJS = fragments[fragment];
-  let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}/fragment`);
+  const fragmentJS = fragments.get(fragment);
+  let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
   if (fragmentJS) {
     if (fragmentJS.preFragment) {

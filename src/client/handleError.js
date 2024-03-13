@@ -13,3 +13,10 @@
   You should have received a copy of the GNU Lesser General Public License along with MicroRender.
   If not, see <https://www.gnu.org/licenses/>.
 */
+
+import { Interrupt } from "./../common/interrupt.js";
+import handleRequest from "./handleRequest.js";
+
+export class ErrorCatcher {
+  constructor(request, url) {};
+};

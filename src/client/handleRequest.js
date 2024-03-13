@@ -13,3 +13,12 @@
   You should have received a copy of the GNU Lesser General Public License along with MicroRender.
   If not, see <https://www.gnu.org/licenses/>.
 */
+
+import { ErrorCatcher } from "./handleError.js";
+import { runJS } from "./runjs.js";
+
+async function loadFragment(fragment, fragmentElement, request, fragments) {};
+
+export default {
+  async fetch(request) {}
+};

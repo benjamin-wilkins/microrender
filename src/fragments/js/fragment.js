@@ -14,11 +14,4 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { ErrorCatcher } from "./handleError.js";
-import { runJS } from "./runjs.js";
-
-async function loadFragment(fragment, fragmentElement, fragments) {};
-
-export default {
-  async load() {}
-};
+// Do nothing for now

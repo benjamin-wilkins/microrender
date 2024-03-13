@@ -23,5 +23,9 @@
   "homepage": "https://github.com/benjamin-wilkins/microrender#readme",
   "devDependencies": {
     "wrangler": "^3.28.3"
+  },
+  "dependencies": {
+    "esbuild": "^0.20.1",
+    "fs-extra": "^11.2.0"
   }
 }
