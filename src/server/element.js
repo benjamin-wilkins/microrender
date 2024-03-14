@@ -51,7 +51,7 @@ export class Element {
     } else if (value == false) {
       this.removeAttribute(attr);
     } else {
-      return this.hasAttribute(attr)
+      return this.hasAttribute(attr);
     };
   };
 

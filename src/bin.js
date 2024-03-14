@@ -62,7 +62,7 @@ async function getFragments() {
 };
 
 async function transformFiles(fragments) {
-  await clean();
+  await fse.emptyDir(build_dir);
 
   for (const [identifier, fragment] of fragments) {
     await fse.copy(path.join(fragment, "fragment.html"), path.join(build_dir, "fragments", `${identifier}.html`));
@@ -121,7 +121,7 @@ async function build() {
 };
 
 async function clean() {
-  await fse.emptyDir(build_dir);
+  await fse.remove(build_dir);
 };
 
 if (command == undefined | command == "help") {

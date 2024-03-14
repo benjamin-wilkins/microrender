@@ -15,5 +15,53 @@
 */
 
 export class Element {
-  constructor(domElement) {};
+  constructor(domElement) {
+    this.domElement = domElement;
+  };
+
+  getAttribute = (attr) => {
+    return this.domElement.getAttribute(attr)
+  };
+
+  hasAttribute = (attr) => {
+    return this.domElement.hasAttribute(attr)
+  };
+
+  setAttribute = (attr, value) => {
+    this.domElement.setAttribute(attr, value)
+  };
+
+  removeAttribute = (attr) => {
+    this.domElement.removeAttribute(attr)
+  };
+
+  attr = (attr, value) => {
+    if (typeof value == "undefined") {
+      return this.getAttribute(attr);
+    } else if (value == false) {
+      this.removeAttribute(attr);
+    } else {
+      this.setAttribute(attr, value);
+    };
+  };
+
+  boolean = (attr, value) => {
+    if (value == true) {
+      this.domElement[attr] = true;
+    } else if (value == false) {
+      this.domElement[attr] = false;
+    } else {
+      return this.domElement[attr];
+    };
+  };
+
+  html = (content) => {
+    this.domElement.textContent = "";
+    this.domElement.insertAdjacentHTML(content);
+  };
+
+  text = (content) => {
+    this.domElement.textContent = "";
+    this.domElement.insertAdjacentText(content);
+  };
 };

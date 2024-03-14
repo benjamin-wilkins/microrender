@@ -26,12 +26,12 @@ export function init(fragments) {
   for (const elmt of document.querySelectorAll("a[href]")) {
     const href = new URL(elmt.href, window.location.href);
 
-    if (startUrl.host + startUrl.path == href.host + href.path) {
-      elmt.removeAttribute("href");
-
+    if (startUrl.host + startUrl.path == href.host + href.path && !href.pathname.startsWith("/assets")) {
       elmt.addEventListener("click", (event) => {
         request = new Request(href);
         handleRequest.fetch(request);
+        
+        event.preventDefault();
       });
     };
   };

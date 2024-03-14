@@ -14,32 +14,33 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export const server = {
-  async preFragment ($) {
-    const path = $.url().pathname;
-    const error = $.error();
+async function preFragment ($) {
+  const path = $.url().pathname;
+  const error = $.error();
 
-    if (error >= 400) {
-      $("#root-content", (elmt) => {elmt.attr("name", "error")});
-    } else {
-      switch (path) {
-        case "/":
-          $("#root-content", (elmt) => {elmt.attr("name", "home")});
-          break
-        case "/redirect":
-          $.url("/");
-        case "/error":
-          throw new Error();
-        default:
-          $.error(404);
-      };
+  if (error >= 400) {
+    $("#root-content", (elmt) => {elmt.attr("name", "error")});
+  } else {
+    switch (path) {
+      case "/":
+        $("#root-content", (elmt) => {elmt.attr("name", "home")});
+        break
+      case "/redirect":
+        $.url("/");
+      case "/error":
+        throw new Error();
+      default:
+        $.error(404);
     };
+  };
 
-    $("#root-message", (elmt) => {elmt.text("Set by root fragment")});
-    $("#root-url", (elmt) => {elmt.text(`The current URL is: ${$.url().toString()}`)})
-  },
-
-  async postFragment ($) {
-    $("#fragment2-message2", (elmt) => {elmt.text("Set by root fragment in child fragment")});
-  }
+  $("#root-message", (elmt) => {elmt.text("Set by root fragment")});
+  $("#root-url", (elmt) => {elmt.text(`The current URL is: ${$.url().toString()}`)});
 };
+
+async function postFragment ($) {
+  $("#fragment2-message2", (elmt) => {elmt.text("Set by root fragment in child fragment")});
+};
+
+export const server = {preFragment, postFragment};
+export const browser = {preFragment, postFragment};

@@ -14,8 +14,9 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export const server = {
-  async preFragment ($) {
-    $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
-  }
+async function preFragment ($) {
+  $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
 };
+
+export const server = {preFragment};
+export const browser = {preFragment};
