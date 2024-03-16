@@ -55,6 +55,10 @@ export default {
         status: 200,
       };
 
+      if (url.pathname.startsWith("/_fragment/")) {
+        request._microrender.status = request.headers.get("MicroRender-Status");
+      };
+
       if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
         request._microrender.formData = await request.formData();
       };

@@ -19,7 +19,6 @@ import { Element } from "./element.js";
 
 export async function runJS(fn, fragmentElement, request) {
   const queue = [];
-  console.log(fn);
   
   const $ = (selector, callback) => {
     for (const domElement of fragmentElement.querySelectorAll(selector)) {
@@ -56,8 +55,6 @@ export async function runJS(fn, fragmentElement, request) {
   };
   
   await fn($);
-
-  console.log(queue);
 
   for (const item of queue) {
     await Promise.resolve(item());

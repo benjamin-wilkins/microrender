@@ -81,7 +81,7 @@ export class Element {
       };
     }
 
-    if (value = "") {
+    if (value = "" || value == null) {
       styles.delete(property);
     } else {
       styles.set(property, value);
@@ -141,7 +141,7 @@ export class Element {
     if (typeof value == "undefined") {
       return this.getAttribute("value");
     } else {
-      this.setAttribute("value", value)
+      this.setAttribute("value", value);
     };
   };
 };
@@ -153,6 +153,6 @@ export class ElementHandler {
 
   element = async (rewriterElement) => {
     const element = new Element(rewriterElement);
-    await this.callback(element)
+    await this.callback(element);
   };
 };

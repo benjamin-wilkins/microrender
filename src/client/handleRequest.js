@@ -16,28 +16,53 @@
 
 import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
-import { Element } from "./element.js";
+import { Interrupt } from "../common/interrupt.js";
 
 async function loadFragment(fragment, fragmentElement, request, fragments) {
-  console.log(fragment);
+  if (fragmentElement.requiresFetch) {
 
-  const fragmentJS = fragments.get(fragment);
+    const fragmentURL = new URL(request.url);
+    fragmentURL.pathname = `/_fragment/${fragment}` + fragmentURL.pathname;
 
-  if (fragmentJS) {
-    if (fragmentJS.preFragment) {
-      await runJS(fragmentJS.preFragment, fragmentElement, request);
+    const fragmentHeaders = request.headers;
+    fragmentHeaders.set("MicroRender-Status", request._microrender.status.toString());
+
+    let fragmentRequest = new Request(fragmentURL, this.request);
+    fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders, redirect: "manual"});
+
+    const newFragment = await fetch(fragmentRequest);
+
+    if (newFragment.headers.get("MicroRender-Status")) {
+      const status = newFragment.headers.get("MicroRender-Status");
+
+      if (300 <= status <= 399) {
+        const location = newFragment.headers.get("MicroRender-Location");
+        throw new Interrupt("redirectResponse", Response.redirect(location, status));
+      };
+    } else if (newFragment.ok) {
+      fragmentElement.innerHTML = await newFragment.text();
+      fragmentElement.requiresFetch = false;
+    } else {
+      throw new Interrupt("errorCode", code);
     };
 
-    await runJS(($) => {
-      $("microrender-fragment", async (elmt) => {
-        let newFragment = await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments);
-        newFragment = await newFragment.text();
-        elmt.html(newFragment);
-      })
-    }, fragmentElement, request);
+  } else {
+    const fragmentJS = fragments.get(fragment);
 
-    if (fragmentJS.postFragment) {
-      await runJS(fragmentJS.postFragment, fragmentElement, request);
+    if (fragmentJS) {
+      if (fragmentJS.preFragment) {
+        await runJS(fragmentJS.preFragment, fragmentElement, request);
+      };
+
+      await runJS(($) => {
+        $("microrender-fragment", async (elmt) => {
+          await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments);
+        })
+      }, fragmentElement, request);
+
+      if (fragmentJS.postFragment) {
+        await runJS(fragmentJS.postFragment, fragmentElement, request);
+      };
     };
   };
 };
@@ -45,8 +70,7 @@ async function loadFragment(fragment, fragmentElement, request, fragments) {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-
-    console.log(url);
+    window.history.pushState(null, "", url);
 
     if (!request._microrender) {
       request._microrender = {
@@ -59,8 +83,6 @@ export default {
     };
 
     const errorCatcher = new ErrorCatcher(request, url);
-
-    window.history.pushState(null, "", url);
-    return loadFragment("root", document, request, this.fragments)//.catch(errorCatcher.catchError);
+    return loadFragment("root", document, request, this.fragments).catch(errorCatcher.catchError);
   }
 };

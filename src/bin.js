@@ -67,6 +67,8 @@ async function transformFiles(fragments) {
   for (const [identifier, fragment] of fragments) {
     await fse.copy(path.join(fragment, "fragment.html"), path.join(build_dir, "fragments", `${identifier}.html`));
   };
+
+  fse.copy(path.join(cwd, "assets"), path.join(build_dir, "assets"))
 };
 
 async function addFragments(file, fragments, env, indent) {

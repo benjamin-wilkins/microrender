@@ -56,12 +56,62 @@ export class Element {
   };
 
   html = (content) => {
-    this.domElement.textContent = "";
-    this.domElement.insertAdjacentHTML(content);
+    this.domElement.innerHTML = content;
   };
 
   text = (content) => {
-    this.domElement.textContent = "";
-    this.domElement.insertAdjacentText(content);
+    this.domElement.textContent = content;
+  };
+
+  getStyle = (property) => {
+    return this.domElement.style.getProperty(property);
+  };
+
+  setStyle = (property, value) => {
+    this.domElement.style.setProperty(property, value);
+  };
+
+  removeStyle = (property) => {
+    this.setStyle(property, "")
+  };
+
+  style = (property, value) => {
+    if (typeof value == "undefined") {
+      return this.getStyle(property);
+    } else {
+      this.setStyle(property, value);
+    };
+  };
+
+  getClass = ($class) => {
+    return this.domElement.classList.contains($class);
+  };
+
+  setClass = ($class, value) => {
+    if (value == true) {
+      this.domElement.classList.add($class);
+    } else if (value == false) {
+      this.domElement.classList.remove($class);
+    };
+  };
+
+  toggleClass = ($class) => {
+    this.domElement.classList.toggle($class);
+  };
+
+  class = ($class, value) => {
+    if (typeof value == "undefined") {
+      return this.getClass($class);
+    } else {
+      this.setClass($class, value);
+    };
+  };
+
+  value = (value) => {
+    if (typeof value == "undefined") {
+      return this.domElement.value;
+    } else {
+      this.domElement.value= value;
+    };
   };
 };

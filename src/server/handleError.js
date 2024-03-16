@@ -29,16 +29,26 @@ export class ErrorCatcher {
 
       switch (e.name) {
         case "redirectResponse":
-          return e.cause;
+          if (!this.url.pathname.startsWith("/_fragment/")) {
+            return e.cause;
+          } else {
+            response = new Response(null, {
+              status: 204,
+              headers: {
+                "MicroRender-Status": e.cause.status,
+                "MicroRender-Location": e.cause.headers.get("status")
+              }
+            });
+          };
 
         case "errorCode":
 
           if (this.request._microrender.status == 500 && e.cause == 500) {
-            return new Response(null, {status: 500});
-          }
+            return new Response("500 Internal Server Error", {status: 500});
+          };
 
           this.request._microrender.status = e.cause;
-          if (200 <= this.request._microrender.status >= 299 || !this.url.pathname.startsWith("/_fragment/")) {
+          if (200 <= this.request._microrender.status <= 299 || !this.url.pathname.startsWith("/_fragment/")) {
             const response = await handleRequest.fetch(this.request, this.env);
             return new Response(response.body, {
               status: this.request._microrender.status,
