@@ -15,7 +15,6 @@
 */
 
 import handleRequest from "./handleRequest.js";
-import handleLoad from "./handleLoad.js";
 
 class MicroRenderFragment extends HTMLElement {
   static observedAttributes = ["name"];
@@ -53,6 +52,4 @@ export function init(fragments) {
       });
     };
   };
-
-  handleLoad.load();
 };
