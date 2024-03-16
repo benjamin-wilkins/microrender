@@ -1,6 +1,6 @@
 /*
-  This file is part a demo app distributed as part of MicroRender, a basic rendering framework.
-  Copyright (C) 2023 Benjamin Wilkins
+  This file is part of MicroRender, a basic rendering framework.
+  Copyright (C) 2023-2024 Benjamin Wilkins
 
   MicroRender is free software: you can redistribute it and/or modify it under the terms of the
   GNU Lesser General Public License as published by the Free Software Foundation, either version 3
@@ -14,21 +14,11 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import Renderer from "https://microrender.pages.dev/core/server.js";
-import sendJS from "https://microrender.pages.dev/helpers/send.js";
+import { ErrorCatcher } from "./handleError.js";
+import { runJS } from "./runjs.js";
 
-const renderer = new Renderer({js: "/fragment.js", html: "/fragment.html"});
-await renderer.init();
-sendJS.init(renderer, "js");
+async function loadFragment(fragment, fragmentElement, fragments) {};
 
 export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-
-    if (url.pathname == "/") {
-      return renderer.render();
-    }
-
-    return env.ASSETS.fetch(request);
-  }
+  async load() {}
 };

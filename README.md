@@ -2,90 +2,48 @@
 
 Simple JS rendering engine that runs on the edge and the browser for optimum speed and compatibility.
 
-MicroRender runs code on the browser using DOM APIs and on Cloudflare Pages/Workers using HTMLRewriter APIs.
-Support for other platforms may be added in the future. It is designed to work best for microfrontend
-renderering, but there are no limitations of use case.
+MicroRender currently has backends for the browser and Cloudflare pages. Support for other backends eg.
+NodeJS servers or AWS Lambda may be added in the future.
 
-MicroRender is a proof of concept and as such is by no means production ready! However, some basic
-concepts are already in place:
+MicroRender is not yet stable or production-ready, but it is coming closer to that point. View the demo
+([code](/demo); [web page](https://microrender.pages.dev)) for examples.
 
-- `Renderer` objects take use a JS function to render the HTML.
-- The function receives the `select` function which it can use to find matching elements using CSS
-  selector syntax (like JQuery).
-- This uses a promise-like syntax to allow multiple elements to be rendered individually. There is no
-  guarantee on which order the elements will arrive in as it depends on the backend API.
-- The element is wrapped to create a set of APIs that work no matter the platform. This is generally
-  kept close to the DOM API, with some quirks straightened out to make it easier to port.
+## Element APIs
 
-Currently, a limited subset of functionality is available on the `Element` object:
+| Syntax                                                     | Implemented? | Description                                                                               |
+|------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
+| `$(selector: string, callback: (elmt: Element) => void)` => `void`    | ✅ | JQuery-like selector API. Runs `callback` for each matching element.                      |
+| `Element.getAttribute(attr)` => `string` \| `void`                    | ✅ | Similar to DOM `Element.getAttribute()`                                                   |
+| `Element.hasAttribute(attr)` => `boolean`                             | ✅ | Similar to DOM `Element.hasAttribute()`                                                   |
+| `Element.setAttribute(attr)` => `void`                                | ✅ | Similar to DOM `Element.setAttribute()`                                                   |
+| `Element.removeAttribute(attr)` => `void`                             | ✅ | Similar to DOM `Element.removeAttribute()`                                                |
+| `Element.attr(attr: string, ?value: string)` => `string` \| `void`    | ✅ | Shorthand for `(get/set/remove)Attribute`; similer to JQuery `.attr()`.                   |
+| `Element.boolean(attr: string, ?value: string)` => `boolean` \| `void`| ✅ | Similar to `.attr()` but simplifies working with boolean attributes.                      |
+| `Element.html(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.innerHTML = content`. HTML is not escaped.                     |
+| `Element.text(content: string)` => `void`                             | ✅ | Equivalent to DOM `Element.textContent = content`. HTML is escaped.                       |
+| `Element.getStyle(property: string)` => `string` \| `void`            | ✅ | Get a CSS property in the inline style tag.                                               |
+| `Element.setStyle(property: string, value: string)` => `void`         | ✅ | Set a CSS property in the inline style tag. A blank string removes it.                    |
+| `Element.removeStyle(property: string)` => `void`                     | ✅ | Remove a CSS property in the inline style tag.                                            |
+| `Element.style(property: string, ?value: string)` => `string` \| `void`| ✅ | Shorthand for `(get/set)Style()`. Similar to JQuery `.css()` but uses inline styles.     |
+| `Element.getClass($class: string)` => `boolean`                       | ✅ | Similar to DOM `Element.classList.contains()`                                             |
+| `Element.setClass($class: string, value: boolean)` => `void`          | ✅ | Similar to DOM `Element.classList.add()` and `Element.classList.remove()`                 |
+| `Element.toggleClass($class: string)` => `void`                       | ✅ | Similar to DOM `Element.classList.toggle()`                                               |
+| `Element.class($class: string, ?value: bool)` => `boolean`            | ✅ | Shorthand for `(get/set)Class()`                                                          |
+| `Element.value(?value: string)` => `string`                           | ✅ | Modify/read the value attribute/property of an element.                                   |
 
-| `microrender.Element`       | `DOM Element`               |
-| ----------------------------- | ----------------------------- |
-| `getAttribute(attr)`        | `getAttribute(attr)`        |
-| `hasAttribute(attr)`        | `hasAttribute(attr)`        |
-| `setAttribute(attr, value)` | `setAttribute(attr, value)` |
-| `removeAttribute(attr)`     | `removeAttribute(attr)`     |
-| `setContent(content)`       | `innerHTML = content`       |
-| `setTextContent(content)`   | `textContent = content`     |
+## Other APIs
 
-## Example
+| Syntax                                                     | Implemented? | Description                                                                               |
+|------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
+| `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | ⬜ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
+| `$.url(?url: string \| URL)` => `URL`                                 | ✅ | Gets/changes current URL - redirects/reruns all fragments using the new URL.              |
+| `$.error(?code)` => `number`                                          | ✅ | Changes the current status - reruns all fragments using the status code.                  |
+| `$.interval(fn: (...args) => boolean, ms: number, ?...args)` => `void`| ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
+| `$.form(field: string)` => `string` \| `void`                         | ✅ | Get form fields from POST requests.                                                       |
 
-Set the contents of `#timeBox` to the current time:
+## Fragments
 
-```javascript
-// fragment.js
-
-export default function ($) {
-  $("#timeBox").do(e => e.setContent(Date()));
-}
-```
-
-Server (Cloudflare Pages):
-
-```javascript
-// _worker.js
-
-import Renderer from "https://microrender.pages.dev/core/server.js";
-import sendJS from "https://microrender.pages.dev/helpers/send.js";
-
-const renderer = new Renderer({js: "/fragment.js", html: "/fragment.html"});
-await renderer.init();
-sendJS.init(renderer, "js");
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-
-    if (url.pathname == "/") {
-      return renderer.render();
-    }
-
-    return env.ASSETS.fetch(request);
-  }
-};
-```
-
-Browser:
-
-```html
-<!-- fragment.html -->
-
-<!DOCTYPE html>
-<html>
-  <head>
-    <script type="importmap"></script>
-  </head>
-  <body>
-    <div id="timeBox"></div>
-    <script type="module">
-      import Renderer from microrender;
-      import js from js;
-
-      const renderer = new Renderer({js: js, root: document.documentElement});
-      window.setInterval(() => {renderer.render()}, 1000);
-    </script>
-  </body>
-</html>
-```
-
-The demo (available [here](https://microrender-demo.benjamin-wilkins.pages.dev)) is an expanded on version of this example.
+| Syntax                                                     | Implemented? | Description                                                                               |
+|------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
+| `<microrender-fragment name="">`                                      | ✅ | Embed another fragment within this fragment.                                              |
+| `name="microrender:js"`                                               | ✅ | Add the browser JS to the page.                                                           |

@@ -1,6 +1,6 @@
-/*
-  This file is part of MicroRender, a basic rendering framework.
-  Copyright (C) 2023 Benjamin Wilkins
+<!--
+  This file is part of a demo of MicroRender, a basic rendering framework.
+  Copyright (C) 2023-2024 Benjamin Wilkins
 
   MicroRender is free software: you can redistribute it and/or modify it under the terms of the
   GNU Lesser General Public License as published by the Free Software Foundation, either version 3
@@ -12,17 +12,11 @@
 
   You should have received a copy of the GNU Lesser General Public License along with MicroRender.
   If not, see <https://www.gnu.org/licenses/>.
-*/
+-->
 
-export default {
-  async init(renderer, name, selector="script[type='importmap]'") {
-    const map = {
-      "imports": {
-        "microrender": "https://microrender.pages.dev/core/browser.js",
-        name: renderer.fragment.js
-      }
-    };
-
-    renderer.select(selector).do(e => e.setContent(JSON.stringify(map)));
-  }
-};
+<div class="bordered">
+  Home Fragment
+  <p id="fragment2-message1"></p>
+  <p id="fragment2-message2"></p>
+  <microrender-fragment name="form"></microrender-fragment>
+</div>

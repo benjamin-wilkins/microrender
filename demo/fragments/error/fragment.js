@@ -1,6 +1,6 @@
 /*
-  This file is part a demo app distributed as part of MicroRender, a basic rendering framework.
-  Copyright (C) 2023 Benjamin Wilkins
+  This file is part of a demo of MicroRender, a basic rendering framework.
+  Copyright (C) 2023-2024 Benjamin Wilkins
 
   MicroRender is free software: you can redistribute it and/or modify it under the terms of the
   GNU Lesser General Public License as published by the Free Software Foundation, either version 3
@@ -14,6 +14,9 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export default function ($) {
-  $("#timeBox").do(e => e.setContent(Date()));
-}
+async function preFragment ($) {
+  $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
+};
+
+export const server = {preFragment};
+export const browser = {preFragment};
