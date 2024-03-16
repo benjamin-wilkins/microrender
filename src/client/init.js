@@ -34,9 +34,7 @@ class MicroRenderFragment extends HTMLElement {
 
 export function init(fragments) {
   window.customElements.define("microrender-fragment", MicroRenderFragment);
-
   handleRequest.fragments = fragments;
-  handleLoad.fragments = fragments;
 
   const startUrl = new URL(window.location.href);
 
