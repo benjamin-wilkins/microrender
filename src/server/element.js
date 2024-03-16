@@ -15,6 +15,10 @@
 */
 
 export class Element {
+  // Wrapper for HTMLRewriter Element APIs. These are similar to
+  // but have some differences and are less comprehensive than the
+  // DOM APIs.
+
   constructor(rewriterElement) {
     this.rewriterElement = rewriterElement
   };
@@ -36,21 +40,33 @@ export class Element {
   };
 
   attr = (attr, value) => {
+    // Shorthand for other *Attribute functions.
+
     if (typeof value == "undefined") {
+      // Only attr argument given
       return this.getAttribute(attr);
+
     } else if (value == false) {
       this.removeAttribute(attr);
+
     } else {
       this.setAttribute(attr, value);
     };
   };
 
   boolean = (attr, value) => {
+    // Simplifies working with boolean attributes as HTML boolean
+    // attributes only affect the original state of the DOM so
+    // updating them with setAttribute() does nothing.
+
     if (value == true) {
       this.setAttribute(attr, attr);
+
     } else if (value == false) {
       this.removeAttribute(attr);
+
     } else {
+      // Only attr value given
       return this.hasAttribute(attr);
     };
   };
@@ -64,15 +80,25 @@ export class Element {
   };
 
   getStyle = (property) => {
+    // No HTMLRewriter style API so parses the attribute manually.
+
+    // No style attribute
     if (!this.hasAttribute("style")) return;
+
     for (const declaration of this.getAttribute("style").split(";")) {
       if (declaration.split(":")[0].trim() == property) {
+        // Found property!
         return declaration.split(":")[1].trim();
       };
     };
+
+    return; // No style set for this property
   };
 
   setStyle = (property, value) => {
+    // No HTMLRewriter style API so parses the attribute manually.
+
+    // Store all styles in a map
     const styles = new Map();
 
     if (this.hasAttribute("style")) {
@@ -81,12 +107,14 @@ export class Element {
       };
     }
 
+    // Update the property
     if (value = "" || value == null) {
       styles.delete(property);
     } else {
       styles.set(property, value);
     };
 
+    // Serialise the styles map into the style attribute
     let styleValue = "";
 
     for (const [property, value] of styles) {
@@ -101,25 +129,39 @@ export class Element {
   };
 
   style = (property, value) => {
+    // Shorthand for other *Style functions.
+    
     if (typeof value == "undefined") {
+      // Only attr argument given
       return this.getStyle(property);
+
     } else {
       this.setStyle(property, value);
     };
   };
 
   getClass = ($class) => {
+    // No HTMLRewriter classList API so parses the attribute manually.
+
+    // No class attribute
     if (!this.hasAttribute("class")) return false;
+
     return this.getAttribute("class").split(" ").includes($class);
   };
 
   setClass = ($class, value) => {
-    let classList = this.getAttribute("class").split(" ");
+    // No HTMLRewriter classList API so parses the attribute manually.
+
+    // Store all classes in an array
+    let classList = this.getAttribute("class").split(" ") || new Array();
 
     if (value == true && !classList.includes($class)) {
+      // Add the class to the classList array
       classList.push($class);
       this.setAttribute("class", classList.join(" "));
+
     } else if (value == false && classList.includes($class)) {
+      // Remove the class from the classList array
       classList = classList.filter((value, index, arr) => {value != $class});
       this.setAttribute("class", classList.join(" "));
     };
@@ -130,7 +172,10 @@ export class Element {
   };
 
   class = ($class, value) => {
+    // Shorthand for other *Class functions.
+
     if (typeof value == "undefined") {
+      // Only $class argument given
       return this.getClass($class);
     } else {
       this.setClass($class, value);
@@ -139,7 +184,9 @@ export class Element {
 
   value = (value) => {
     if (typeof value == "undefined") {
+      // No arguments given
       return this.getAttribute("value");
+      
     } else {
       this.setAttribute("value", value);
     };

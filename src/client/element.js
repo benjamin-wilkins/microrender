@@ -15,6 +15,8 @@
 */
 
 export class Element {
+  // Wrapper for DOM Element APIs.
+
   constructor(domElement) {
     this.domElement = domElement;
   };
@@ -36,21 +38,33 @@ export class Element {
   };
 
   attr = (attr, value) => {
+    // Shorthand for other *Attribute functions.
+
     if (typeof value == "undefined") {
+      // Only attr argument given
       return this.getAttribute(attr);
+
     } else if (value == false) {
       this.removeAttribute(attr);
+
     } else {
       this.setAttribute(attr, value);
     };
   };
 
   boolean = (attr, value) => {
+    // Simplifies working with boolean attributes as HTML boolean
+    // attributes only affect the original state of the DOM so
+    // updating them with setAttribute() does nothing.
+
     if (value == true) {
       this.domElement[attr] = true;
+
     } else if (value == false) {
       this.domElement[attr] = false;
+
     } else {
+      // Only attr value given
       return this.domElement[attr];
     };
   };
@@ -64,6 +78,9 @@ export class Element {
   };
 
   getStyle = (property) => {
+    // Gets style from the style property, not computed styles,
+    // in order to match server.
+
     return this.domElement.style.getProperty(property);
   };
 
@@ -76,8 +93,12 @@ export class Element {
   };
 
   style = (property, value) => {
+    // Shorthand for other *Style functions.
+
     if (typeof value == "undefined") {
+      // Only one argument given.
       return this.getStyle(property);
+
     } else {
       this.setStyle(property, value);
     };
@@ -100,6 +121,8 @@ export class Element {
   };
 
   class = ($class, value) => {
+    // Shorthand for other *Class functions.
+
     if (typeof value == "undefined") {
       return this.getClass($class);
     } else {
@@ -108,8 +131,13 @@ export class Element {
   };
 
   value = (value) => {
+    // Wrapper around value property as HTML attribute value only
+    // affects the initial valuue.
+
     if (typeof value == "undefined") {
+      // No arguments given
       return this.domElement.value;
+      
     } else {
       this.domElement.value= value;
     };
