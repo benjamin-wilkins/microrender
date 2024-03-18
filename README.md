@@ -46,4 +46,5 @@ MicroRender is not yet stable or production-ready, but it is coming closer to th
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
 | `<microrender-fragment name="">`                                      | ✅ | Embed another fragment within this fragment.                                              |
+| `:states(--requires-fetch)` (`.state--requires-fetch` polyfill)       | ✅ | CSS selector for fragments that need to be fetched from the server.                       |
 | `name="microrender:js"`                                               | ✅ | Add the browser JS to the page.                                                           |
