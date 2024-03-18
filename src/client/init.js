@@ -34,7 +34,7 @@ class MicroRenderFragment extends HTMLElement {
     if (this.internals_.states) {
       return this.internals_.states.has("--requires-fetch");
     } else {
-      return this.classList.has("state--requires-fetch");
+      return this.classList.contains("state--requires-fetch");
     };
   };
 
@@ -43,13 +43,13 @@ class MicroRenderFragment extends HTMLElement {
       if (this.internals_.states) {
         this.internals_.states.add("--requires-fetch");
       } else {
-        return this.classList.add("state--requires-fetch");
+        this.classList.add("state--requires-fetch");
       };
     } else {
       if (this.internals_.states) {
         this.internals_.states.delete("--requires-fetch");
       } else {
-        return this.classList.remove("state--requires-fetch");
+        this.classList.remove("state--requires-fetch");
       };
     };
   };
