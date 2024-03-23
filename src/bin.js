@@ -22,12 +22,19 @@ import fse from "fs-extra/esm"
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import resolvePackagePath from "resolve-package-path";
 import * as esbuild from "esbuild";
+
+import defaultConfig from "./common/default.config.js";
 
 const command = process.argv[2];
 const cwd = process.cwd();
 const microrender_dir = path.dirname(fileURLToPath(import.meta.url));
 const build_dir = path.join(cwd, "build");
+const configPath = path.join(cwd, "microrender.config.js");
+
+const config = Object.create(defaultConfig);
+Object.assign(config, (await import(configPath).default));
 
 const serverImport = `import { init } from "${path.join(microrender_dir, "server/init.js")}";\n\n`;
 const browserImport = `import { init } from "${path.join(microrender_dir, "client/init.js")}";\n\n`;
@@ -49,6 +56,24 @@ async function getFragments() {
 
   fragment_dirs.set(null, cwd);
   fragment_dirs.set("microrender", microrender_dir);
+
+  async function getPlugin(plugin) {
+    if (fragment_dirs.has(plugin)) return;
+
+    const pluginDir = path.dirname(resolvePackagePath(plugin, cwd));
+    const pluginConfig = Object.create(defaultConfig);
+    Object.extend(pluginConfig, await import(path.join(pluginDir, "microrender.config.js")).default);
+
+    fragment_dirs.set(plugin, path.resolve(pluginDir, pluginConfig.dirs.fragments));
+
+    for (plugin of pluginConfig.plugins) {
+      await getPlugin(plugin);
+    };
+  };
+
+  for (const plugin of config.plugins) {
+    await getPlugin(plugin);
+  };
 
   for (const [identifier, dirname] of fragment_dirs) {
     for (const fragment of await fs.readdir(path.join(dirname, "fragments"), {withFileTypes: true})) {
