@@ -14,7 +14,9 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export class Element {
+import {decode} from 'html-entities';
+
+class Element {
   // Wrapper for HTMLRewriter Element APIs. These are similar to
   // but have some differences and are less comprehensive than the
   // DOM APIs.
@@ -24,19 +26,19 @@ export class Element {
   };
 
   getAttribute = (attr) => {
-    return this.rewriterElement.getAttribute(attr)
+    return decode(this.rewriterElement.getAttribute(attr));
   };
 
   hasAttribute = (attr) => {
-    return this.rewriterElement.hasAttribute(attr)
+    return this.rewriterElement.hasAttribute(attr);
   };
 
   setAttribute = (attr, value) => {
-    this.rewriterElement.setAttribute(attr, value)
+    this.rewriterElement.setAttribute(attr, value);
   };
 
   removeAttribute = (attr) => {
-    this.rewriterElement.removeAttribute(attr)
+    this.rewriterElement.removeAttribute(attr);
   };
 
   attr = (attr, value) => {
