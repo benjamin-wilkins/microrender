@@ -27,17 +27,32 @@ import * as esbuild from "esbuild";
 
 import defaultConfig from "./common/default.config.js";
 
+let env;
+
+if (process.env["ENV"]) {
+  env = process.env["ENV"].toLowerCase();
+} else {
+  env = "local";
+};
+
 const command = process.argv[2];
 const cwd = process.cwd();
 const microrender_dir = path.dirname(fileURLToPath(import.meta.url));
 const build_dir = path.join(cwd, "build");
 const configPath = path.join(cwd, "microrender.config.js");
 
-const config = Object.create(defaultConfig);
-Object.assign(config, (await import(configPath).default));
+const config = Object.assign({}, defaultConfig, (await import(configPath))[env]);
 
-const serverImport = `import { init } from "${path.join(microrender_dir, "server/init.js")}";\n\n`;
-const browserImport = `import { init } from "${path.join(microrender_dir, "client/init.js")}";\n\n`;
+const serverImport = `import { init } from "${path.join(microrender_dir, "server/init.js")}";\n`;
+const browserImport = `import { init } from "${path.join(microrender_dir, "client/init.js")}";\n`;
+
+const configSetup = `
+import defaultConfig from "${path.join(microrender_dir, "./common/default.config.js")}";
+import {${env} as userConfig} from "${configPath}";
+
+const config = Object.assign({}, defaultConfig, userConfig);
+
+`
 
 const help = `
 Microrender builder
@@ -114,8 +129,9 @@ async function buildJS(fragments) {
     workerJS = await fs.open(path.join(build_dir, "_worker.js"), "w");
 
     await workerJS.write(serverImport);
+    await workerJS.write(configSetup);
     await addFragments(workerJS, fragments, "server");
-    await workerJS.write("export default init(fragments);")
+    await workerJS.write("export default init(fragments, config);")
   } finally {
     workerJS.close();
   };
@@ -124,9 +140,10 @@ async function buildJS(fragments) {
     browserJS = await fs.open(path.join(build_dir, "_browser.js"), "w");
 
     await browserJS.write(browserImport);
+    await browserJS.write(configSetup);
     await browserJS.write("(async () => {\n");
     await addFragments(browserJS, fragments, "browser", "  ");
-    await browserJS.write("  init(fragments);\n");
+    await browserJS.write("  init(fragments, config);\n");
     await browserJS.write("})();");
   } finally {
     browserJS.close();

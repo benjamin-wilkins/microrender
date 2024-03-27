@@ -1,9 +1,16 @@
-// Just got default settings at the moment
+// Basic application config
+// Supports local testing
 
-export default {
-  project: {
-    assets: "assets",
-    fragments: "fragments"
-  },
-  plugins: []
+// Run locally using `npx wrangler pages dev demo/build --port 8788 --service backend=demo-backend` 
+
+export const local = {
+  bindings: ["backend"]
+};
+
+export const staging = {
+  bindings: ["backend"]
+};
+
+export const production = {
+  bindings: ["backend"]
 };

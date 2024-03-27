@@ -17,7 +17,7 @@
 import { Interrupt } from "./../common/interrupt.js";
 import { Element } from "./element.js";
 
-export async function runJS(fn, fragmentElement, request) {
+export async function runJS(fn, fragmentElement, request, config) {
   const queue = [];
   
   const $ = (selector, callback) => {
@@ -46,6 +46,35 @@ export async function runJS(fn, fragmentElement, request) {
     };
 
     return request._microrender.status;
+  };
+
+  $.fetch = (resource, options) => {
+    const url = new URL(resource instanceof Request ? resource.url : resource.toString());
+
+    if (url.protocol == "binding:") {
+      const binding = url.pathname.split("/")[0];
+      const path = url.pathname.split("/").slice(1);
+
+      if (!config.bindings.includes(binding)) {
+        throw new TypeError("Unrecognised binding");
+      };
+
+      const endUrl = new URL(`https://${binding}`);
+      endUrl.pathname = path;
+      endUrl.query = url.query;
+      endUrl.hash = url.hash;
+
+      const requestURL = new URL(`/_binding/${binding}`, request.url);
+      requestURL.searchParams.set("url", endUrl);
+
+      if (resource instanceof Request) {
+        resource = new Request(requestURL, resource);
+      } else {
+        resource = requestURL;
+      };
+    };
+
+    return fetch(resource, options);
   };
 
   if (request._microrender.formData) {

@@ -16,8 +16,9 @@
 
 import handleRequest from "./handleRequest.js";
 
-export function init(fragments) {
+export function init(fragments, config) {
   handleRequest.fragments = fragments;
+  handleRequest.config = config;
 
   return handleRequest;
 };

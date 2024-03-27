@@ -17,25 +17,25 @@
 import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
 
-async function loadFragment(fragment, request, env, fragments) {
+async function loadFragment(fragment, request, env, fragments, config) {
   const fragmentJS = fragments.get(fragment);
   let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
   if (fragmentJS) {
     if (fragmentJS.preFragment) {
-      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML, request, env);
+      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML, request, env, config);
     };
 
     fragmentHTML = await runJS(($) => {
       $("microrender-fragment", async (elmt) => {
-        let newFragment = await loadFragment(elmt.attr("name"), request, env, fragments);
+        let newFragment = await loadFragment(elmt.attr("name"), request, env, fragments, config);
         newFragment = await newFragment.text();
         elmt.html(newFragment);
       })
-    }, fragmentHTML, request, env);
+    }, fragmentHTML, request, env, config);
 
     if (fragmentJS.postFragment) {
-      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML, request, env);
+      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML, request, env, config);
     };
   };
 
@@ -48,7 +48,18 @@ export default {
 
     if (url.pathname.startsWith("/assets/")) {
       return env.ASSETS.fetch(request);
-    }
+    } else if (url.pathname.startsWith("/_binding/")) {
+      const newRequest = new Request(url.searchParams.get("url"), request);
+      let binding;
+
+      try {
+        binding = env[url.pathname.split("/")[2]];
+      } catch (e) {
+        return new Response("500 Internal Server Error", {status: 500});
+      };
+
+      return binding.fetch(newRequest);
+    };
 
     if (!request._microrender) {
       request._microrender = {
@@ -67,9 +78,9 @@ export default {
     const errorCatcher = new ErrorCatcher(request, url, env);
 
     if (url.pathname.startsWith("/_fragment/")) {
-      return loadFragment(url.pathname.split("/")[2], request, env, this.fragments).catch(errorCatcher.catchError);
+      return loadFragment(url.pathname.split("/")[2], request, env, this.fragments, this.config).catch(errorCatcher.catchError);
     } else {
-      return loadFragment("root", request, env, this.fragments).catch(errorCatcher.catchError);
+      return loadFragment("root", request, env, this.fragments, this.config).catch(errorCatcher.catchError);
     };
   }
 };

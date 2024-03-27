@@ -18,7 +18,7 @@ import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
 import { Interrupt } from "../common/interrupt.js";
 
-async function loadFragment(fragment, fragmentElement, request, fragments) {
+async function loadFragment(fragment, fragmentElement, request, fragments, config) {
   if (fragmentElement.requiresFetch) {
 
     const fragmentURL = new URL(request.url);
@@ -51,17 +51,17 @@ async function loadFragment(fragment, fragmentElement, request, fragments) {
 
     if (fragmentJS) {
       if (fragmentJS.preFragment) {
-        await runJS(fragmentJS.preFragment, fragmentElement, request);
+        await runJS(fragmentJS.preFragment, fragmentElement, request, config);
       };
 
       await runJS(($) => {
         $("microrender-fragment", async (elmt) => {
-          await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments);
+          await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments, config);
         })
-      }, fragmentElement, request);
+      }, fragmentElement, request, config);
 
       if (fragmentJS.postFragment) {
-        await runJS(fragmentJS.postFragment, fragmentElement, request);
+        await runJS(fragmentJS.postFragment, fragmentElement, request, config);
       };
     };
   };
@@ -83,6 +83,6 @@ export default {
     };
 
     const errorCatcher = new ErrorCatcher(request, url);
-    return loadFragment("root", document, request, this.fragments).catch(errorCatcher.catchError);
+    return loadFragment("root", document, request, this.fragments, this.config).catch(errorCatcher.catchError);
   }
 };

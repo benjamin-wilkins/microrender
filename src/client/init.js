@@ -55,16 +55,17 @@ class MicroRenderFragment extends HTMLElement {
   };
 };
 
-export function init(fragments) {
+export function init(fragments, config) {
   window.customElements.define("microrender-fragment", MicroRenderFragment);
   handleRequest.fragments = fragments;
+  handleRequest.config = config;
 
   const startUrl = new URL(window.location.href);
 
   for (const elmt of document.querySelectorAll("a[href]")) {
     const href = new URL(elmt.href, window.location.href);
 
-    if (startUrl.host + startUrl.path == href.host + href.path && !href.pathname.startsWith("/assets")) {
+    if (startUrl.host == href.host && !href.pathname.startsWith("/assets")) {
       elmt.addEventListener("click", (event) => {
         request = new Request(href);
         handleRequest.fetch(request);

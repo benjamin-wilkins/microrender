@@ -17,7 +17,7 @@
 import { Interrupt } from "./../common/interrupt.js";
 import { ElementHandler } from "./element.js";
 
-export async function runJS(fn, fragmentHTML, request, env) {
+export async function runJS(fn, fragmentHTML, request, env, config) {
   const rewriter = new HTMLRewriter();
 
   const $ = (selector, callback) => {
@@ -50,6 +50,33 @@ export async function runJS(fn, fragmentHTML, request, env) {
     };
 
     return request._microrender.status;
+  };
+
+  $.fetch = (resource, options) => {
+    const url = new URL(resource instanceof Request ? resource.url : resource.toString());
+
+    if (url.protocol == "binding:") {
+      const binding = url.pathname.split("/")[0];
+      const path = url.pathname.split("/").slice(1);
+
+      if (!config.bindings.includes(binding)) {
+        throw new TypeError("Unrecognised binding");
+      };
+
+      const newUrl = new URL(`https://${binding}`);
+      newUrl.pathname = path;
+      newUrl.query = url.query;
+      newUrl.hash = url.hash;
+
+      if (resource instanceof Request) {
+        resource = new Request(newUrl, resource);
+      } else {
+        resource = newUrl;
+      };
+
+      return env[binding].fetch(resource);
+    };
+    return fetch(resource, options);
   };
 
   if (request._microrender.formData) {
