@@ -35,7 +35,7 @@ MicroRender is not yet stable or production-ready, but it is coming closer to th
 
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
-| `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | ⬜ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
+| `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | ✅ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
 | `$.url(?url: string \| URL)` => `URL`                                 | ✅ | Gets/changes current URL - redirects/reruns all fragments using the new URL.              |
 | `$.error(?code)` => `number`                                          | ✅ | Changes the current status - reruns all fragments using the status code.                  |
 | `$.interval(fn: (...args) => boolean, ms: number, ?...args)` => `void`| ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
