@@ -1,2 +1,4 @@
 demo/*
 .wrangler/*
+.eslintrc.yml
+.gitlab-ci.yml
