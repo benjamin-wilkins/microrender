@@ -1,8 +1,10 @@
-default:
-  image: node:latest
+image: node:latest
+
+stages:
+  - release
 
 publish:
-  stage: deploy
+  stage: release
   interruptible: false
   retry: 1
   script:
