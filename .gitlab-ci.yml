@@ -1,4 +1,5 @@
-image: node:20
+default:
+  image: node:latest
 
 publish:
   stage: deploy
