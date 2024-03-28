@@ -1,3 +1,5 @@
+image: node:20
+
 publish:
   stage: deploy
   interruptible: false
