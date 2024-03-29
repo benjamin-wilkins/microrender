@@ -77,6 +77,10 @@ export async function runJS(fn, fragmentElement, request, config) {
     return fetch(resource, options);
   };
 
+  $.data = (attr) => {
+    return fragmentElement.getAttribute(`data-${attr}`);
+  };
+
   if (request._microrender.formData) {
     $.form = (field) => {
       return request._microrender.formData.get(field);

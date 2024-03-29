@@ -16,26 +16,30 @@
 
 import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
+import helpers from "../common/helpers.js";
 
-async function loadFragment(fragment, request, env, fragments, config) {
+async function loadFragment(fragment, request, env, fragments, config, data) {
   const fragmentJS = fragments.get(fragment);
   let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
   if (fragmentJS) {
     if (fragmentJS.preFragment) {
-      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML, request, env, config);
+      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML, request, env, config, data);
     };
 
     fragmentHTML = await runJS(($) => {
       $("microrender-fragment", async (elmt) => {
-        let newFragment = await loadFragment(elmt.attr("name"), request, env, fragments, config);
+        const name = elmt.attr("name");
+        const data = helpers.getData(elmt.rewriterElement.attributes);
+
+        let newFragment = await loadFragment(name, request, env, fragments, config, data);
         newFragment = await newFragment.text();
         elmt.html(newFragment);
       })
-    }, fragmentHTML, request, env, config);
+    }, fragmentHTML, request, env, config, data);
 
     if (fragmentJS.postFragment) {
-      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML, request, env, config);
+      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML, request, env, config, data);
     };
   };
 
@@ -78,7 +82,10 @@ export default {
     const errorCatcher = new ErrorCatcher(request, url, env);
 
     if (url.pathname.startsWith("/_fragment/")) {
-      return loadFragment(url.pathname.split("/")[2], request, env, this.fragments, this.config).catch(errorCatcher.catchError);
+      const name = url.pathname.split("/")[2]
+      const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
+
+      return loadFragment(name, request, env, this.fragments, this.config, data).catch(errorCatcher.catchError);
     } else {
       return loadFragment("root", request, env, this.fragments, this.config).catch(errorCatcher.catchError);
     };
