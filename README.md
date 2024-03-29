@@ -40,6 +40,7 @@ MicroRender is not yet stable or production-ready, but it is coming closer to th
 | `$.error(?code)` => `number`                                          | ✅ | Changes the current status - reruns all fragments using the status code.                  |
 | `$.interval(fn: (...args) => boolean, ms: number, ?...args)` => `void`| ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
 | `$.form(field: string)` => `string` \| `void`                         | ✅ | Get form fields from POST requests.                                                       |
+| `$.data(attr: string)` => `string` \| `void`                          | ✅ | Get data-* attributes from the fragment element.                                          |
 
 ## Fragments
 
