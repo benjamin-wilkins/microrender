@@ -85,7 +85,7 @@ export default {
       const name = url.pathname.split("/")[2]
       const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
 
-      return loadFragment(name, request, env, this.fragments, this.config).catch(errorCatcher.catchError);
+      return loadFragment(name, request, env, this.fragments, this.config, data).catch(errorCatcher.catchError);
     } else {
       return loadFragment("root", request, env, this.fragments, this.config).catch(errorCatcher.catchError);
     };
