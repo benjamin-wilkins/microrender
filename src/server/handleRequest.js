@@ -16,6 +16,7 @@
 
 import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
+import helpers from "../common/helpers.js";
 
 async function loadFragment(fragment, request, env, fragments, config, data) {
   const fragmentJS = fragments.get(fragment);
@@ -29,14 +30,7 @@ async function loadFragment(fragment, request, env, fragments, config, data) {
     fragmentHTML = await runJS(($) => {
       $("microrender-fragment", async (elmt) => {
         const name = elmt.attr("name");
-
-        const data = new Map;
-
-        for (const [attr, value] of elmt.rewriterElement.attributes) {
-          if (attr.startsWith("data-")) {
-            data.set(attr.slice(5), value);
-          };
-        };
+        const data = helpers.getData(elmt.rewriterElement.attributes);
 
         let newFragment = await loadFragment(name, request, env, fragments, config, data);
         newFragment = await newFragment.text();
@@ -88,7 +82,10 @@ export default {
     const errorCatcher = new ErrorCatcher(request, url, env);
 
     if (url.pathname.startsWith("/_fragment/")) {
-      return loadFragment(url.pathname.split("/")[2], request, env, this.fragments, this.config).catch(errorCatcher.catchError);
+      const name = url.pathname.split("/")[2]
+      const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
+
+      return loadFragment(name, request, env, this.fragments, this.config).catch(errorCatcher.catchError);
     } else {
       return loadFragment("root", request, env, this.fragments, this.config).catch(errorCatcher.catchError);
     };

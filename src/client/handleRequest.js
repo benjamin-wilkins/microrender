@@ -17,6 +17,7 @@
 import { ErrorCatcher } from "./handleError.js";
 import { runJS } from "./runjs.js";
 import { Interrupt } from "../common/interrupt.js";
+import helpers from "../common/helpers.js";
 
 async function loadFragment(fragment, fragmentElement, request, fragments, config) {
   if (fragmentElement.requiresFetch) {
@@ -26,6 +27,9 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
 
     const fragmentHeaders = request.headers;
     fragmentHeaders.set("MicroRender-Status", request._microrender.status.toString());
+  
+    const fragmentData = helpers.getData(Array.from(fragmentElement.attributes).map(attr => [attr.name, attr.value]));
+    fragmentHeaders.set("MicroRender-Data", JSON.stringify(Array.from(fragmentData)));
 
     let fragmentRequest = new Request(fragmentURL, this.request);
     fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders, redirect: "manual"});
