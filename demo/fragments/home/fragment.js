@@ -21,7 +21,8 @@ async function preFragment ($) {
   backendMsg = await backendMsg.text();
   
   $("#home-backend-msg", (elmt) => {elmt.text(backendMsg)});
-}
+  $("#home-attr-msg", (elmt) => {elmt.text($.data("msg"))});
+};
 
 export const server = {preFragment};
 export const browser = {preFragment};

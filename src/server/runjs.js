@@ -17,7 +17,7 @@
 import { Interrupt } from "./../common/interrupt.js";
 import { ElementHandler } from "./element.js";
 
-export async function runJS(fn, fragmentHTML, request, env, config) {
+export async function runJS(fn, fragmentHTML, request, env, config, data) {
   const rewriter = new HTMLRewriter();
 
   const $ = (selector, callback) => {
@@ -77,6 +77,10 @@ export async function runJS(fn, fragmentHTML, request, env, config) {
       return env[binding].fetch(resource);
     };
     return fetch(resource, options);
+  };
+
+  $.data = (attr) => {
+    return data.get(attr);
   };
 
   if (request._microrender.formData) {
