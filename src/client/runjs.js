@@ -14,40 +14,10 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Interrupt } from "./../common/interrupt.js";
+import { Interrupt } from "../common/error.js";
 import { Element } from "./element.js";
 
-export async function runJS(fn, fragmentElement, request, config) {
-  const queue = [];
-  
-  const $ = (selector, callback) => {
-    for (const domElement of fragmentElement.querySelectorAll(selector)) {
-      let element = new Element(domElement);
-      queue.push(() => callback(element));
-    };
-  };
-
-  $.url = (newURL, status) => {
-    const currentURL = new URL(request.url);
-
-    if (typeof newURL != "undefined") {
-      if (typeof newURL == "string") {
-        newURL = new URL(newURL, currentURL);
-      };
-      throw new Interrupt("redirectResponse", Response.redirect(newURL, status));
-    };
-
-    return currentURL;
-  };
-
-  $.error = (code) => {
-    if (typeof code != "undefined") {
-      throw new Interrupt("errorCode", code)
-    };
-
-    return request._microrender.status;
-  };
-
+function addCommon($, request, config) {
   $.fetch = (resource, options) => {
     const url = new URL(resource instanceof Request ? resource.url : resource.toString());
 
@@ -77,14 +47,64 @@ export async function runJS(fn, fragmentElement, request, config) {
     return fetch(resource, options);
   };
 
-  $.data = (attr) => {
-    return fragmentElement.getAttribute(`data-${attr}`);
-  };
-
   if (request._microrender.formData) {
     $.form = (field) => {
       return request._microrender.formData.get(field);
     };
+  };
+};
+
+export async function control(fn, request, config) {
+  const $ = Object.create(null);
+  addCommon($, request, config);
+
+  $.url = (newURL, status) => {
+    const currentURL = new URL(request.url);
+
+    if (typeof newURL != "undefined") {
+      if (typeof newURL == "string") {
+        newURL = new URL(newURL, currentURL);
+      };
+      throw new Interrupt("redirectResponse", Response.redirect(newURL, status));
+    };
+
+    return currentURL;
+  };
+
+  $.error = (code) => {
+    if (typeof code != "undefined") {
+      throw new Interrupt("errorCode", code)
+    };
+
+    return request._microrender.status;
+  };
+
+  await fn($);
+};
+
+export async function render(fn, fragmentElement, request, config) {
+  const queue = [];
+  
+  const $ = (selector, callback) => {
+    for (const domElement of fragmentElement.querySelectorAll(selector)) {
+      let element = new Element(domElement);
+      queue.push(() => callback(element));
+    };
+  };
+
+  addCommon($, request, config);
+
+  $.url = () => {
+    const currentURL = new URL(request.url);
+    return currentURL;
+  };
+
+  $.error = () => {
+    return request._microrender.status;
+  };
+
+  $.data = (attr) => {
+    return fragmentElement.getAttribute(`data-${attr}`);
   };
   
   await fn($);

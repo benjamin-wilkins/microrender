@@ -15,7 +15,7 @@
 */
 
 import { ErrorCatcher } from "./handleError.js";
-import { runJS } from "./runjs.js";
+import { control, render } from "./runjs.js";
 import helpers from "../common/helpers.js";
 
 async function loadFragment(fragment, request, env, fragments, config, data) {
@@ -24,11 +24,11 @@ async function loadFragment(fragment, request, env, fragments, config, data) {
 
   if (fragmentJS) {
     if (fragmentJS.render) {
-      fragmentHTML = await runJS(fragmentJS.render, fragmentHTML, request, env, config, data);
+      fragmentHTML = await render(fragmentJS.render, fragmentHTML, request, env, config, data);
     };
   };
 
-  fragmentHTML = await runJS(($) => {
+  fragmentHTML = await render(($) => {
     $("microrender-fragment", async (elmt) => {
       const name = elmt.attr("name");
       const data = helpers.getData(elmt.rewriterElement.attributes);

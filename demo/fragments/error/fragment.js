@@ -22,5 +22,5 @@ async function render ($) {
   $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
 };
 
-export const server = {render};
-export const browser = {render};
+export const server = {render, control};
+export const browser = {render, control};

@@ -14,16 +14,47 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Interrupt } from "./../common/interrupt.js";
+import { Interrupt } from "../common/error.js";
 import { ElementHandler } from "./element.js";
 
-export async function runJS(fn, fragmentHTML, request, env, config, data) {
-  const rewriter = new HTMLRewriter();
+function addCommon($, request, env, config) {
+  $.fetch = (resource, options) => {
+    const url = new URL(resource instanceof Request ? resource.url : resource.toString(), request.url);
 
-  const $ = (selector, callback) => {
-    const handler = new ElementHandler(callback);
-    rewriter.on(selector, handler);
+    if (url.protocol == "binding:") {
+      const binding = url.pathname.split("/")[0];
+      const path = url.pathname.split("/").slice(1);
+
+      if (!config.bindings.includes(binding)) {
+        throw new TypeError("Unrecognised binding");
+      };
+
+      const newUrl = new URL(`https://${binding}`);
+      newUrl.pathname = path;
+      newUrl.query = url.query;
+      newUrl.hash = url.hash;
+
+      if (resource instanceof Request) {
+        resource = new Request(newUrl, resource);
+      } else {
+        resource = newUrl;
+      };
+
+      return env[binding].fetch(resource);
+    };
+    return fetch(resource, options);
   };
+
+  if (request._microrender.formData) {
+    $.form = (field) => {
+      return request._microrender.formData.get(field);
+    };
+  };
+};
+
+export async function control(fn, request, env, config) {
+  const $ = Object.create(null);
+  addCommon($, request, env, config);
 
   $.url = (newURL, status) => {
     const currentURL = new URL(request.url);
@@ -52,41 +83,37 @@ export async function runJS(fn, fragmentHTML, request, env, config, data) {
     return request._microrender.status;
   };
 
-  $.fetch = (resource, options) => {
-    const url = new URL(resource instanceof Request ? resource.url : resource.toString());
+  await fn($);
+};
 
-    if (url.protocol == "binding:") {
-      const binding = url.pathname.split("/")[0];
-      const path = url.pathname.split("/").slice(1);
+export async function render(fn, fragmentHTML, request, env, config, data) {
+  const rewriter = new HTMLRewriter();
 
-      if (!config.bindings.includes(binding)) {
-        throw new TypeError("Unrecognised binding");
-      };
+  const $ = (selector, callback) => {
+    const handler = new ElementHandler(callback);
+    rewriter.on(selector, handler);
+  };
 
-      const newUrl = new URL(`https://${binding}`);
-      newUrl.pathname = path;
-      newUrl.query = url.query;
-      newUrl.hash = url.hash;
+  addCommon($, request, env, config);
 
-      if (resource instanceof Request) {
-        resource = new Request(newUrl, resource);
-      } else {
-        resource = newUrl;
-      };
+  $.url = () => {
+    const currentURL = new URL(request.url);
 
-      return env[binding].fetch(resource);
+    if (currentURL.pathname.startsWith("/_fragment/")) {
+      const path = currentURL.pathname.split("/");
+      path.splice(1, 2);
+      currentURL.pathname = path.join("/");
     };
-    return fetch(resource, options);
+
+    return currentURL;
+  };
+
+  $.error = () => {
+    return request._microrender.status;
   };
 
   $.data = (attr) => {
     return data.get(attr);
-  };
-
-  if (request._microrender.formData) {
-    $.form = (field) => {
-      return request._microrender.formData.get(field);
-    };
   };
   
   await fn($);
