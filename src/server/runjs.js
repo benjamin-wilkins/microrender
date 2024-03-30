@@ -14,16 +14,47 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Interrupt } from "./../common/interrupt.js";
+import { Interrupt } from "../common/error.js";
 import { ElementHandler } from "./element.js";
 
-export async function runJS(fn, fragmentHTML, request, env, config, data) {
-  const rewriter = new HTMLRewriter();
+function addCommon($, request, env, config) {
+  $.fetch = (resource, options) => {
+    const url = new URL(resource instanceof Request ? resource.url : resource.toString(), request.url);
 
-  const $ = (selector, callback) => {
-    const handler = new ElementHandler(callback);
-    rewriter.on(selector, handler);
+    if (url.protocol == "binding:") {
+      const binding = url.pathname.split("/")[0];
+      const path = url.pathname.split("/").slice(1);
+
+      if (!config.bindings.includes(binding)) {
+        throw new TypeError("Unrecognised binding");
+      };
+
+      const newUrl = new URL(`https://${binding}`);
+      newUrl.pathname = path;
+      newUrl.query = url.query;
+      newUrl.hash = url.hash;
+
+      if (resource instanceof Request) {
+        resource = new Request(newUrl, resource);
+      } else {
+        resource = newUrl;
+      };
+
+      return env[binding].fetch(resource);
+    };
+    return fetch(resource, options);
   };
+
+  if (request._microrender.formData) {
+    $.form = (field) => {
+      return request._microrender.formData.get(field);
+    };
+  };
+};
+
+export async function control(fn, request, env, fragments, config) {
+  const $ = Object.create(null);
+  addCommon($, request, env, config);
 
   $.url = (newURL, status) => {
     const currentURL = new URL(request.url);
@@ -52,44 +83,76 @@ export async function runJS(fn, fragmentHTML, request, env, config, data) {
     return request._microrender.status;
   };
 
-  $.fetch = (resource, options) => {
-    const url = new URL(resource instanceof Request ? resource.url : resource.toString());
-
-    if (url.protocol == "binding:") {
-      const binding = url.pathname.split("/")[0];
-      const path = url.pathname.split("/").slice(1);
-
-      if (!config.bindings.includes(binding)) {
-        throw new TypeError("Unrecognised binding");
-      };
-
-      const newUrl = new URL(`https://${binding}`);
-      newUrl.pathname = path;
-      newUrl.query = url.query;
-      newUrl.hash = url.hash;
-
-      if (resource instanceof Request) {
-        resource = new Request(newUrl, resource);
-      } else {
-        resource = newUrl;
-      };
-
-      return env[binding].fetch(resource);
+  $.title = (title) => {
+    if (typeof title != "undefined") {
+      request._microrender.title = title;
+      return;
     };
-    return fetch(resource, options);
+
+    return request._microrender.title;
+  };
+
+  $.desc = (desc) => {
+    if (typeof desc != "undefined") {
+      request._microrender.description = desc;
+      return;
+    };
+
+    return request._microrender.description;
+  };
+
+  $.pass = (fragment) => {
+    const fragmentJS = fragments.get(fragment);
+
+    if (fragmentJS) {
+      if (fragmentJS.control) {
+        return control(fragmentJS.control, request, env, fragments, config);
+      };
+    };
+  };
+
+  await fn($);
+};
+
+export async function render(fn, fragmentHTML, request, env, config, data) {
+  const rewriter = new HTMLRewriter();
+
+  const $ = (selector, callback) => {
+    const handler = new ElementHandler(callback);
+    rewriter.on(selector, handler);
+  };
+
+  addCommon($, request, env, config);
+
+  $.url = () => {
+    const currentURL = new URL(request.url);
+
+    if (currentURL.pathname.startsWith("/_fragment/")) {
+      const path = currentURL.pathname.split("/");
+      path.splice(1, 2);
+      currentURL.pathname = path.join("/");
+    };
+
+    return currentURL;
+  };
+
+  $.error = () => {
+    return request._microrender.status;
+  };
+
+  $.title = () => {
+    return request._microrender.title;
+  };
+
+  $.desc = () => {
+    return request._microrender.description;
   };
 
   $.data = (attr) => {
     return data.get(attr);
   };
-
-  if (request._microrender.formData) {
-    $.form = (field) => {
-      return request._microrender.formData.get(field);
-    };
-  };
   
   await fn($);
 
-  return rewriter.transform(await fragmentHTML);
+  return rewriter.transform(fragmentHTML);
 };

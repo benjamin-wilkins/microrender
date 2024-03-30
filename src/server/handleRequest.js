@@ -15,33 +15,32 @@
 */
 
 import { ErrorCatcher } from "./handleError.js";
-import { runJS } from "./runjs.js";
+import { control, render } from "./runjs.js";
 import helpers from "../common/helpers.js";
 
 async function loadFragment(fragment, request, env, fragments, config, data) {
   const fragmentJS = fragments.get(fragment);
-  let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
+  let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
+  console.log(fragment)
 
   if (fragmentJS) {
-    if (fragmentJS.preFragment) {
-      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML, request, env, config, data);
-    };
-
-    fragmentHTML = await runJS(($) => {
-      $("microrender-fragment", async (elmt) => {
-        const name = elmt.attr("name");
-        const data = helpers.getData(elmt.rewriterElement.attributes);
-
-        let newFragment = await loadFragment(name, request, env, fragments, config, data);
-        newFragment = await newFragment.text();
-        elmt.html(newFragment);
-      })
-    }, fragmentHTML, request, env, config, data);
-
-    if (fragmentJS.postFragment) {
-      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML, request, env, config, data);
+    if (fragmentJS.render) {
+      fragmentHTML = await render(fragmentJS.render, fragmentHTML, request, env, config, data);
     };
   };
+  console.log(fragment)
+
+  fragmentHTML = await render(($) => {
+    $("microrender-fragment", async (elmt) => {
+      const name = elmt.attr("name");
+      const data = helpers.getData(elmt.rewriterElement.attributes);
+
+      let newFragment = await loadFragment(name, request, env, fragments, config, data);
+      newFragment = await newFragment.text();
+      elmt.html(newFragment);
+    })
+  }, fragmentHTML, request, env, config, data);
+  console.log(fragment)
 
   return fragmentHTML;
 };
@@ -68,10 +67,14 @@ export default {
     if (!request._microrender) {
       request._microrender = {
         status: 200,
+        title: "",
+        description: ""
       };
 
       if (url.pathname.startsWith("/_fragment/")) {
         request._microrender.status = request.headers.get("MicroRender-Status");
+        request._microrender.title = request.headers.get("MicroRender-Title");
+        request._microrender.description = request.headers.get("MicroRender-Description");
       };
 
       if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
@@ -79,15 +82,26 @@ export default {
       };
     };
 
-    const errorCatcher = new ErrorCatcher(request, url, env);
-
     if (url.pathname.startsWith("/_fragment/")) {
       const name = url.pathname.split("/")[2]
       const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
 
-      return loadFragment(name, request, env, this.fragments, this.config, data).catch(errorCatcher.catchError);
-    } else {
-      return loadFragment("root", request, env, this.fragments, this.config).catch(errorCatcher.catchError);
+      return loadFragment(name, request, env, this.fragments, this.config, data);
+    };
+    
+    const fragmentJS = this.fragments.get("root");
+
+    if (fragmentJS) {
+      if (fragmentJS.control) {
+        try {
+          await control(fragmentJS.control, request, env, this.fragments, this.config);
+        } catch (e) {
+          const errorCatcher = new ErrorCatcher(request, url, env);
+          return errorCatcher.catch(e);
+        };
+      };
+
+      return loadFragment("root", request, env, this.fragments, this.config);
     };
   }
 };

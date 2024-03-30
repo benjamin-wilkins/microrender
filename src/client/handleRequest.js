@@ -15,8 +15,8 @@
 */
 
 import { ErrorCatcher } from "./handleError.js";
-import { runJS } from "./runjs.js";
-import { Interrupt } from "../common/interrupt.js";
+import { control, render } from "./runjs.js";
+import { Interrupt } from "../common/error.js";
 import helpers from "../common/helpers.js";
 
 async function loadFragment(fragment, fragmentElement, request, fragments, config) {
@@ -27,6 +27,8 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
 
     const fragmentHeaders = request.headers;
     fragmentHeaders.set("MicroRender-Status", request._microrender.status.toString());
+    fragmentHeaders.set("MicroRender-Title", request._microrender.title);
+    fragmentHeaders.set("MicroRender-Description", request._microrender.description);
   
     const fragmentData = helpers.getData(Array.from(fragmentElement.attributes).map(attr => [attr.name, attr.value]));
     fragmentHeaders.set("MicroRender-Data", JSON.stringify(Array.from(fragmentData)));
@@ -54,20 +56,16 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
     const fragmentJS = fragments.get(fragment);
 
     if (fragmentJS) {
-      if (fragmentJS.preFragment) {
-        await runJS(fragmentJS.preFragment, fragmentElement, request, config);
-      };
-
-      await runJS(($) => {
-        $("microrender-fragment", async (elmt) => {
-          await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments, config);
-        })
-      }, fragmentElement, request, config);
-
-      if (fragmentJS.postFragment) {
-        await runJS(fragmentJS.postFragment, fragmentElement, request, config);
+      if (fragmentJS.render) {
+        await render(fragmentJS.render, fragmentElement, request, config);
       };
     };
+
+    await render(($) => {
+      $("microrender-fragment", async (elmt) => {
+        await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments, config);
+      })
+    }, fragmentElement, request, config);
   };
 };
 
@@ -79,6 +77,8 @@ export default {
     if (!request._microrender) {
       request._microrender = {
         status: 200,
+        title: "",
+        description: ""
       };
 
       if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
@@ -86,7 +86,19 @@ export default {
       };
     };
 
-    const errorCatcher = new ErrorCatcher(request, url);
-    return loadFragment("root", document, request, this.fragments, this.config).catch(errorCatcher.catchError);
+    const fragmentJS = this.fragments.get("root");
+
+    if (fragmentJS) {
+      if (fragmentJS.control) {
+        try {
+          await control(fragmentJS.control, request, this.fragments, this.config);
+        } catch (e) {
+          const errorCatcher = new ErrorCatcher(request, url);
+          return errorCatcher.catch(e);
+        };
+      };
+    };
+
+    return loadFragment("root", document, request, this.fragments, this.config);
   }
 };

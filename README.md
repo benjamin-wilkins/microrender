@@ -8,7 +8,23 @@ NodeJS servers or AWS Lambda may be added in the future.
 MicroRender is not yet stable or production-ready, but it is coming closer to that point. View the demo
 ([code](/demo); [web page](https://microrender.pages.dev)) for examples.
 
-## Element APIs
+## Global APIs
+
+These APIs can be accessed on the $ object passed to any hook (exported function) of each fragment.
+
+| Syntax                                                     | Implemented? | Description                                                                               |
+|------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
+| `$.form(field: string)` => `string` \| `void`                         | ✅ | Get form fields from POST requests. `undefined` unless the method is `POST`.              |
+| `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | ✅ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
+| `$.url()` => `URL`                                                    | ✅ | Gets the current URL. Can be modified in the `control` hook.                              |
+| `$.error()` => `number`                                               | ✅ | Gets the current HTTP status. Can be modified in the `control` hook. Default `200`.       |
+| `$.title()` => `string`                                               | ✅ | Gets the title variable. Can be modified in the `control` hook. Default `""`.             |
+| `$.desc()` => `string`                                                | ✅ | Gets the description variable. Can be modified in the `control` hook. Default `""`.       |
+
+## Render APIs
+
+These APIs can be accessed on the $ object passed to the `render` hook (export function) of each
+fragment.
 
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
@@ -30,22 +46,31 @@ MicroRender is not yet stable or production-ready, but it is coming closer to th
 | `Element.toggleClass($class: string)` => `void`                       | ✅ | Similar to DOM `Element.classList.toggle()`                                               |
 | `Element.class($class: string, ?value: bool)` => `boolean`            | ✅ | Shorthand for `(get/set)Class()`                                                          |
 | `Element.value(?value: string)` => `string`                           | ✅ | Modify/read the value attribute/property of an element.                                   |
-
-## Other APIs
-
-| Syntax                                                     | Implemented? | Description                                                                               |
-|------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
-| `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | ✅ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
-| `$.url(?url: string \| URL)` => `URL`                                 | ✅ | Gets/changes current URL - redirects/reruns all fragments using the new URL.              |
-| `$.error(?code)` => `number`                                          | ✅ | Changes the current status - reruns all fragments using the status code.                  |
-| `$.interval(fn: (...args) => boolean, ms: number, ?...args)` => `void`| ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
-| `$.form(field: string)` => `string` \| `void`                         | ✅ | Get form fields from POST requests.                                                       |
 | `$.data(attr: string)` => `string` \| `void`                          | ✅ | Get data-* attributes from the fragment element.                                          |
+| `$.interval(fn: (...args) => boolean, ms: number, ?...args)` => `void`| ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
 
-## Fragments
+## Control APIs
+
+These APIs can be accessed on the $ object passed to the `control` hook (export function) of each
+fragment. They cannot be used in the `render` hook as they modify HTTP headers on the server so must
+run before any of the body code.
 
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
-| `<microrender-fragment name="">`                                      | ✅ | Embed another fragment within this fragment.                                              |
-| `:states(--requires-fetch)` (`.state--requires-fetch` polyfill)       | ✅ | CSS selector for fragments that need to be fetched from the server.                       |
-| `name="microrender:js"`                                               | ✅ | Add the browser JS to the page.                                                           |
+| `$.url(url: string \| URL)` => `void`                                | ✅ | Changes current URL. Extends the global `$.url` API.                                       |
+| `$.error(code: number)` => `void`                                    | ✅ | Changes the current HTTP status. Extends the global `$.error` API.                         |
+| `$.cookie(name: string, value: string)` => ` void`                   | ⬜ | Sets browser cookies.                                                                      |
+| `$.title(title: string)` => `void`                                   | ✅ | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.     |
+| `$.desc(desc: string)` => `void`                                     | ✅ | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.     |
+| `$.pass(fragment: string)` => `Promise<void>`                        | ✅ | Passes control to the `control` hook of another fragment.                                  |
+
+## Additional Fragment APIs
+
+These are HTML and CSS APIs for defining and using fragments.
+
+| Syntax                                                     | Implemented? | Description                                                                               |
+|------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
+| HTML `<microrender-fragment name="">`                                 | ✅ | Embed another fragment within this fragment.                                              |
+| HTML `name="microrender:js"`                                          | ✅ | Add the browser JS to the page.                                                           |
+| HTML `data-*=""`                                                      | ✅ | Add parameters to a fragment. These can be accessed in the `render` hook using `$.data`   |
+| CSS `:states(--requires-fetch)` (`.state--requires-fetch` polyfill)   | ✅ | CSS selector for fragments that need to be fetched from the server.                       |
