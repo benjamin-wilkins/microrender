@@ -17,7 +17,9 @@ These APIs can be accessed on the $ object passed to any hook (exported function
 | `$.form(field: string)` => `string` \| `void`                         | ✅ | Get form fields from POST requests. `undefined` unless the method is `POST`.              |
 | `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | ✅ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
 | `$.url()` => `URL`                                                    | ✅ | Gets the current URL. Can be modified in the `control` hook.                              |
-| `$.error()` => `number`                                               | ✅ | Gets the current HTTP status. Can be modified in the `control` hook.                      |
+| `$.error()` => `number`                                               | ✅ | Gets the current HTTP status. Can be modified in the `control` hook. Default `200`.       |
+| `$.title()` => `string`                                               | ⬜ | Gets the title variable. Can be modified in the `control` hook. Default `""`.             |
+| `$.desc()` => `string`                                                | ⬜ | Gets the description variable. Can be modified in the `control` hook. Default `""`.       |
 
 ## Render APIs
 
