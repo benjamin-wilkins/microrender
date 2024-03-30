@@ -18,8 +18,8 @@ These APIs can be accessed on the $ object passed to any hook (exported function
 | `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | ✅ | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
 | `$.url()` => `URL`                                                    | ✅ | Gets the current URL. Can be modified in the `control` hook.                              |
 | `$.error()` => `number`                                               | ✅ | Gets the current HTTP status. Can be modified in the `control` hook. Default `200`.       |
-| `$.title()` => `string`                                               | ⬜ | Gets the title variable. Can be modified in the `control` hook. Default `""`.             |
-| `$.desc()` => `string`                                                | ⬜ | Gets the description variable. Can be modified in the `control` hook. Default `""`.       |
+| `$.title()` => `string`                                               | ✅ | Gets the title variable. Can be modified in the `control` hook. Default `""`.             |
+| `$.desc()` => `string`                                                | ✅ | Gets the description variable. Can be modified in the `control` hook. Default `""`.       |
 
 ## Render APIs
 
@@ -57,12 +57,12 @@ run before any of the body code.
 
 | Syntax                                                     | Implemented? | Description                                                                               |
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
-| `$.url(url: string \| URL)` => `void`                                | ✅ | Changes current URL. Extends the global `$.url` API.                                      |
-| `$.error(code: number)` => `void`                                    | ✅ | Changes the current HTTP status. Extends the global `$.error` API.                        |
-| `$.cookie(name: string, value: string)` => ` void`                   | ✅ | Sets browser cookies.                                                                     |
-| `$.title(title: string)` => `void`                                   | ⬜ | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.    |
-| `$.desc(desc: string)` => `void`                                     | ⬜ | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.    |
-| `$.pass(fragment: string)` => `void`                                 | ⬜ | Passes control to the `control` hook of another fragment.                                 |
+| `$.url(url: string \| URL)` => `void`                                | ✅ | Changes current URL. Extends the global `$.url` API.                                       |
+| `$.error(code: number)` => `void`                                    | ✅ | Changes the current HTTP status. Extends the global `$.error` API.                         |
+| `$.cookie(name: string, value: string)` => ` void`                   | ⬜ | Sets browser cookies.                                                                      |
+| `$.title(title: string)` => `void`                                   | ✅ | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.     |
+| `$.desc(desc: string)` => `void`                                     | ✅ | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.     |
+| `$.pass(fragment: string)` => `void`                                 | ✅ | Passes control to the `control` hook of another fragment.                                  |
 
 ## Additional Fragment APIs
 

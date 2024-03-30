@@ -21,12 +21,14 @@ import helpers from "../common/helpers.js";
 async function loadFragment(fragment, request, env, fragments, config, data) {
   const fragmentJS = fragments.get(fragment);
   let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
+  console.log(fragment)
 
   if (fragmentJS) {
     if (fragmentJS.render) {
       fragmentHTML = await render(fragmentJS.render, fragmentHTML, request, env, config, data);
     };
   };
+  console.log(fragment)
 
   fragmentHTML = await render(($) => {
     $("microrender-fragment", async (elmt) => {
@@ -38,6 +40,7 @@ async function loadFragment(fragment, request, env, fragments, config, data) {
       elmt.html(newFragment);
     })
   }, fragmentHTML, request, env, config, data);
+  console.log(fragment)
 
   return fragmentHTML;
 };
@@ -64,10 +67,14 @@ export default {
     if (!request._microrender) {
       request._microrender = {
         status: 200,
+        title: "",
+        description: ""
       };
 
       if (url.pathname.startsWith("/_fragment/")) {
         request._microrender.status = request.headers.get("MicroRender-Status");
+        request._microrender.title = request.headers.get("MicroRender-Title");
+        request._microrender.description = request.headers.get("MicroRender-Description");
       };
 
       if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
@@ -75,23 +82,26 @@ export default {
       };
     };
 
-    const errorCatcher = new ErrorCatcher(request, url, env);
-
     if (url.pathname.startsWith("/_fragment/")) {
       const name = url.pathname.split("/")[2]
       const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
 
-      return loadFragment(name, request, env, this.fragments, this.config, data).catch(errorCatcher.catchError);
+      return loadFragment(name, request, env, this.fragments, this.config, data);
     } else {
       const fragmentJS = this.fragments.get("root");
 
       if (fragmentJS) {
         if (fragmentJS.control) {
-          await control(fragmentJS.control, request, env, this.config);
+          try {
+            await control(fragmentJS.control, request, env, this.fragments, this.config);
+          } catch (e) {
+            const errorCatcher = new ErrorCatcher(request, url, env);
+            return errorCatcher.catch(e);
+          };
         };
       };
 
-      return loadFragment("root", request, env, this.fragments, this.config).catch(errorCatcher.catchError);
+      return loadFragment("root", request, env, this.fragments, this.config);
     };
   }
 };

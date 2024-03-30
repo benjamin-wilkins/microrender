@@ -16,7 +16,7 @@
 
 import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
-import { Interrupt } from "../common/interrupt.js";
+import { Interrupt } from "../common/error.js";
 import helpers from "../common/helpers.js";
 
 async function loadFragment(fragment, fragmentElement, request, fragments, config) {
@@ -27,6 +27,8 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
 
     const fragmentHeaders = request.headers;
     fragmentHeaders.set("MicroRender-Status", request._microrender.status.toString());
+    fragmentHeaders.set("MicroRender-Title", request._microrender.title);
+    fragmentHeaders.set("MicroRender-Description", request._microrender.description);
   
     const fragmentData = helpers.getData(Array.from(fragmentElement.attributes).map(attr => [attr.name, attr.value]));
     fragmentHeaders.set("MicroRender-Data", JSON.stringify(Array.from(fragmentData)));
@@ -75,6 +77,8 @@ export default {
     if (!request._microrender) {
       request._microrender = {
         status: 200,
+        title: "",
+        description: ""
       };
 
       if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
@@ -86,11 +90,15 @@ export default {
 
     if (fragmentJS) {
       if (fragmentJS.control) {
-        await control(fragmentJS.control, request, env, this.config);
+        try {
+          await control(fragmentJS.control, request, this.fragments, this.config);
+        } catch (e) {
+          const errorCatcher = new ErrorCatcher(request, url);
+          return errorCatcher.catch(e);
+        };
       };
     };
 
-    const errorCatcher = new ErrorCatcher(request, url);
-    return loadFragment("root", document, request, this.fragments, this.config).catch(errorCatcher.catchError);
+    return loadFragment("root", document, request, this.fragments, this.config);
   }
 };

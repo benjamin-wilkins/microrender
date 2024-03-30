@@ -18,13 +18,15 @@ async function control ($) {
   const path = $.url().pathname;
   const error = $.error();
 
-  if (error) {
-    $.pass("error");
+  if (error >= 400) {
+    await $.pass("error");
+    return
   };
 
   switch (path) {
     case "/":
-      $.pass("home");
+      await $.pass("home");
+      break
     case "/redirect":
       $.url("/");
     case "/error":
@@ -43,6 +45,8 @@ async function render ($) {
   } else if (path == "/") {
     $("#root-content", (elmt) => {elmt.attr("name", "home")});
   };
+
+  $("title", (elmt) => {elmt.text(`${$.title()} | MicroRender`)})
 
   $("#root-message", (elmt) => {elmt.text("Set by root fragment")});
   $("#root-url", (elmt) => {elmt.text(`The current URL is: ${$.url().toString()}`)});

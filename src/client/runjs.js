@@ -54,7 +54,7 @@ function addCommon($, request, config) {
   };
 };
 
-export async function control(fn, request, config) {
+export async function control(fn, request, fragments, config) {
   const $ = Object.create(null);
   addCommon($, request, config);
 
@@ -79,6 +79,34 @@ export async function control(fn, request, config) {
     return request._microrender.status;
   };
 
+  $.title = (title) => {
+    if (typeof title != "undefined") {
+      request._microrender.title = title;
+      return;
+    };
+
+    return request._microrender.title;
+  };
+
+  $.desc = (desc) => {
+    if (typeof desc != "undefined") {
+      request._microrender.description = desc;
+      return;
+    };
+
+    return request._microrender.description;
+  };
+
+  $.pass = (fragment) => {
+    const fragmentJS = fragments.get(fragment);
+
+    if (fragmentJS) {
+      if (fragmentJS.control) {
+        return control(fragmentJS.control, request, fragments, config);
+      };
+    };
+  };
+
   await fn($);
 };
 
@@ -101,6 +129,14 @@ export async function render(fn, fragmentElement, request, config) {
 
   $.error = () => {
     return request._microrender.status;
+  };
+
+  $.title = () => {
+    return request._microrender.title;
+  };
+
+  $.desc = () => {
+    return request._microrender.description;
   };
 
   $.data = (attr) => {

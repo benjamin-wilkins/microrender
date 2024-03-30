@@ -14,7 +14,7 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Interrupt } from "./../common/interrupt.js";
+import { Interrupt } from "./../common/error.js";
 import handleRequest from "./handleRequest.js";
 
 export class ErrorCatcher {
@@ -23,7 +23,7 @@ export class ErrorCatcher {
     this.url = url;
   };
 
-  catchError = async (e) => {
+  catch = async (e) => {
     if (e instanceof Interrupt) {
 
       switch (e.name) {
