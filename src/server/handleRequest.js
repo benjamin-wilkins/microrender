@@ -87,17 +87,17 @@ export default {
       const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
 
       return loadFragment(name, request, env, this.fragments, this.config, data);
-    } else {
-      const fragmentJS = this.fragments.get("root");
+    };
+    
+    const fragmentJS = this.fragments.get("root");
 
-      if (fragmentJS) {
-        if (fragmentJS.control) {
-          try {
-            await control(fragmentJS.control, request, env, this.fragments, this.config);
-          } catch (e) {
-            const errorCatcher = new ErrorCatcher(request, url, env);
-            return errorCatcher.catch(e);
-          };
+    if (fragmentJS) {
+      if (fragmentJS.control) {
+        try {
+          await control(fragmentJS.control, request, env, this.fragments, this.config);
+        } catch (e) {
+          const errorCatcher = new ErrorCatcher(request, url, env);
+          return errorCatcher.catch(e);
         };
       };
 
