@@ -82,6 +82,14 @@ export default {
       };
     };
 
+    const fragmentJS = this.fragments.get("root");
+
+    if (fragmentJS) {
+      if (fragmentJS.control) {
+        await control(fragmentJS.control, request, env, this.config);
+      };
+    };
+
     const errorCatcher = new ErrorCatcher(request, url);
     return loadFragment("root", document, request, this.fragments, this.config).catch(errorCatcher.catchError);
   }

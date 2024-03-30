@@ -83,6 +83,14 @@ export default {
 
       return loadFragment(name, request, env, this.fragments, this.config, data).catch(errorCatcher.catchError);
     } else {
+      const fragmentJS = this.fragments.get("root");
+
+      if (fragmentJS) {
+        if (fragmentJS.control) {
+          await control(fragmentJS.control, request, env, this.config);
+        };
+      };
+
       return loadFragment("root", request, env, this.fragments, this.config).catch(errorCatcher.catchError);
     };
   }
