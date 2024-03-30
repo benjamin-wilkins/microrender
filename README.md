@@ -62,7 +62,7 @@ run before any of the body code.
 | `$.cookie(name: string, value: string)` => ` void`                   | ⬜ | Sets browser cookies.                                                                      |
 | `$.title(title: string)` => `void`                                   | ✅ | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.     |
 | `$.desc(desc: string)` => `void`                                     | ✅ | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.     |
-| `$.pass(fragment: string)` => `void`                                 | ✅ | Passes control to the `control` hook of another fragment.                                  |
+| `$.pass(fragment: string)` => `Promise<void>`                        | ✅ | Passes control to the `control` hook of another fragment.                                  |
 
 ## Additional Fragment APIs
 
