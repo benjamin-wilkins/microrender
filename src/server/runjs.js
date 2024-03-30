@@ -91,5 +91,5 @@ export async function runJS(fn, fragmentHTML, request, env, config, data) {
   
   await fn($);
 
-  return rewriter.transform(await fragmentHTML);
+  return rewriter.transform(fragmentHTML);
 };

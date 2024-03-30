@@ -91,5 +91,5 @@ export async function runJS(fn, fragmentElement, request, config) {
 
   for (const item of queue) {
     await Promise.resolve(item());
-  }
+  };
 };

@@ -54,20 +54,16 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
     const fragmentJS = fragments.get(fragment);
 
     if (fragmentJS) {
-      if (fragmentJS.preFragment) {
-        await runJS(fragmentJS.preFragment, fragmentElement, request, config);
-      };
-
-      await runJS(($) => {
-        $("microrender-fragment", async (elmt) => {
-          await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments, config);
-        })
-      }, fragmentElement, request, config);
-
-      if (fragmentJS.postFragment) {
-        await runJS(fragmentJS.postFragment, fragmentElement, request, config);
+      if (fragmentJS.render) {
+        await runJS(fragmentJS.render, fragmentElement, request, config);
       };
     };
+
+    await runJS(($) => {
+      $("microrender-fragment", async (elmt) => {
+        await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments, config);
+      })
+    }, fragmentElement, request, config);
   };
 };
 

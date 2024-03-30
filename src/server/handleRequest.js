@@ -20,28 +20,24 @@ import helpers from "../common/helpers.js";
 
 async function loadFragment(fragment, request, env, fragments, config, data) {
   const fragmentJS = fragments.get(fragment);
-  let fragmentHTML = env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
+  let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
   if (fragmentJS) {
-    if (fragmentJS.preFragment) {
-      fragmentHTML = await runJS(fragmentJS.preFragment, fragmentHTML, request, env, config, data);
-    };
-
-    fragmentHTML = await runJS(($) => {
-      $("microrender-fragment", async (elmt) => {
-        const name = elmt.attr("name");
-        const data = helpers.getData(elmt.rewriterElement.attributes);
-
-        let newFragment = await loadFragment(name, request, env, fragments, config, data);
-        newFragment = await newFragment.text();
-        elmt.html(newFragment);
-      })
-    }, fragmentHTML, request, env, config, data);
-
-    if (fragmentJS.postFragment) {
-      fragmentHTML = await runJS(fragmentJS.postFragment, fragmentHTML, request, env, config, data);
+    if (fragmentJS.render) {
+      fragmentHTML = await runJS(fragmentJS.render, fragmentHTML, request, env, config, data);
     };
   };
+
+  fragmentHTML = await runJS(($) => {
+    $("microrender-fragment", async (elmt) => {
+      const name = elmt.attr("name");
+      const data = helpers.getData(elmt.rewriterElement.attributes);
+
+      let newFragment = await loadFragment(name, request, env, fragments, config, data);
+      newFragment = await newFragment.text();
+      elmt.html(newFragment);
+    })
+  }, fragmentHTML, request, env, config, data);
 
   return fragmentHTML;
 };
