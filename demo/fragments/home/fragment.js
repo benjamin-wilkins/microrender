@@ -14,7 +14,15 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-async function preFragment ($) {
+async function control ($) {
+  $.pass("form");
+
+  if (!$.title()) {
+    $.title("Home");
+  };
+};
+
+async function render ($) {
   $("#fragment2-message1", (elmt) => {elmt.text("Set by home fragment")});
 
   let backendMsg = await $.fetch("binding:backend/");
@@ -24,5 +32,5 @@ async function preFragment ($) {
   $("#home-attr-msg", (elmt) => {elmt.text($.data("msg"))});
 };
 
-export const server = {preFragment};
-export const browser = {preFragment};
+export const server = {render, control};
+export const browser = {render, control};

@@ -14,12 +14,18 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-async function preFragment ($) {
+async function control ($) {
+  if ($.form) {
+    $.title("Form Result");
+  };
+};
+
+async function render ($) {
   if ($.form) {
     const name = $.form("name");
     $("#form-result", (elmt) => {elmt.text(`Your name is: ${name}.`);})
   };
 };
 
-export const server = {preFragment};
-export const browser = {preFragment};
+export const server = {render, control};
+export const browser = {render, control};
