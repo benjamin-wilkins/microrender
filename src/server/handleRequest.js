@@ -21,14 +21,12 @@ import helpers from "../common/helpers.js";
 async function loadFragment(fragment, request, env, fragments, config, data) {
   const fragmentJS = fragments.get(fragment);
   let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
-  console.log(fragment)
 
   if (fragmentJS) {
     if (fragmentJS.render) {
       fragmentHTML = await render(fragmentJS.render, fragmentHTML, request, env, config, data);
     };
   };
-  console.log(fragment)
 
   fragmentHTML = await render(($) => {
     $("microrender-fragment", async (elmt) => {
@@ -40,7 +38,6 @@ async function loadFragment(fragment, request, env, fragments, config, data) {
       elmt.html(newFragment);
     })
   }, fragmentHTML, request, env, config, data);
-  console.log(fragment)
 
   return fragmentHTML;
 };
