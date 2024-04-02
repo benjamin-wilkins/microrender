@@ -4,5 +4,6 @@ export default {
     fragments: "fragments"
   },
   bindings: new Map,
-  plugins: []
+  plugins: [],
+  stripComments: false,
 };

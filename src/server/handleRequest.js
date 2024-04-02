@@ -18,6 +18,19 @@ import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
 import helpers from "../common/helpers.js";
 
+class DocumentHandler {
+  constructor (config) {
+    console.log(config);
+    this.stripComments = config.stripComments;
+  };
+
+  comments = async (comment) => {
+    if (this.stripComments) {
+      comment.remove();
+    };
+  };
+};
+
 async function loadFragment(fragment, request, env, fragments, config, data) {
   const fragmentJS = fragments.get(fragment);
   let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
@@ -79,11 +92,15 @@ export default {
       };
     };
 
+    const rewriter = new HTMLRewriter();
+    rewriter.onDocument(new DocumentHandler(this.config));
+
     if (url.pathname.startsWith("/_fragment/")) {
       const name = url.pathname.split("/")[2]
       const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
 
-      return loadFragment(name, request, env, this.fragments, this.config, data);
+      const response = await loadFragment(name, request, env, this.fragments, this.config, data);
+      return rewriter.transform(response);
     };
     
     const fragmentJS = this.fragments.get("root");
@@ -98,7 +115,8 @@ export default {
         };
       };
 
-      return loadFragment("root", request, env, this.fragments, this.config);
+      const response = await loadFragment("root", request, env, this.fragments, this.config);
+      return rewriter.transform(response);
     };
   }
 };
