@@ -16,7 +16,7 @@
 
 import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
-import helpers from "../common/helpers.js";
+import { getData } from "../common/helpers.js";
 
 class DocumentHandler {
   constructor (config) {
@@ -43,7 +43,7 @@ async function loadFragment(fragment, request, env, fragments, config, data) {
   fragmentHTML = await render(($) => {
     $("microrender-fragment", async (elmt) => {
       const name = elmt.attr("name");
-      const data = helpers.getData(elmt.rewriterElement.attributes);
+      const data = getData(elmt.rewriterElement.attributes);
 
       let newFragment = await loadFragment(name, request, env, fragments, config, data);
       newFragment = await newFragment.text();

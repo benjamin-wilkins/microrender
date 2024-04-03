@@ -17,7 +17,8 @@
 import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
 import { Interrupt } from "../common/error.js";
-import helpers from "../common/helpers.js";
+import { getData } from "../common/helpers.js";
+import { getJS } from "./helpers.js";
 
 async function loadFragment(fragment, fragmentElement, request, fragments, config) {
   if (fragmentElement.requiresFetch) {
@@ -30,7 +31,7 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
     fragmentHeaders.set("MicroRender-Title", request._microrender.title);
     fragmentHeaders.set("MicroRender-Description", request._microrender.description);
   
-    const fragmentData = helpers.getData(Array.from(fragmentElement.attributes).map(attr => [attr.name, attr.value]));
+    const fragmentData = getData(Array.from(fragmentElement.attributes).map(attr => [attr.name, attr.value]));
     fragmentHeaders.set("MicroRender-Data", JSON.stringify(Array.from(fragmentData)));
 
     let fragmentRequest = new Request(fragmentURL, request);
@@ -53,7 +54,7 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
     };
 
   } else {
-    const fragmentJS = fragments.get(fragment);
+    const fragmentJS = await getJS(fragment, fragments);
 
     if (fragmentJS) {
       if (fragmentJS.render) {
@@ -86,7 +87,7 @@ export default {
       };
     };
 
-    const fragmentJS = this.fragments.get("root");
+    const fragmentJS = await getJS("root", this.fragments);
 
     if (fragmentJS) {
       if (fragmentJS.control) {

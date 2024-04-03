@@ -15,6 +15,7 @@
 */
 
 import handleRequest from "./handleRequest.js";
+import { getJS } from "./helpers.js";
 
 class MicroRenderFragment extends HTMLElement {
   static observedAttributes = ["name"];
@@ -28,6 +29,8 @@ class MicroRenderFragment extends HTMLElement {
     if (oldValue != newValue && oldValue) {
       this.requiresFetch = true;
     };
+
+    window.setTimeout(() => getJS(newValue, this.fragments));
   };
 
   get requiresFetch() {
@@ -56,9 +59,11 @@ class MicroRenderFragment extends HTMLElement {
 };
 
 export function init(fragments, config) {
-  window.customElements.define("microrender-fragment", MicroRenderFragment);
+  MicroRenderFragment.prototype.fragments = fragments;
   handleRequest.fragments = fragments;
   handleRequest.config = config;
+
+  window.customElements.define("microrender-fragment", MicroRenderFragment);
 
   const startUrl = new URL(window.location.href);
 

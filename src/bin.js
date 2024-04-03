@@ -117,7 +117,16 @@ async function addFragments(file, fragments, env) {
   await file.write("const fragments = new Map;\n\n");
 
   for (const [identifier, fragment] of fragments) {
-    await file.write(`fragments.set("${identifier}", (await import("${path.join(fragment, "fragment.js")}")).${env});\n`);
+    const fragmentPath = path.join(fragment, "fragment.js")
+    let loader;
+
+    if (env == "browser") {
+      loader = `() => import("${fragmentPath}").then(x => x.browser)`;
+    } else {
+      loader = `await import("${fragmentPath}").then(x => x.server)`;
+    };
+
+    await file.write(`fragments.set("${identifier}", ${loader});\n`);
   };
 
   await file.write("\n");
