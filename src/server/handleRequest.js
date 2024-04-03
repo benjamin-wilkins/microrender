@@ -20,7 +20,6 @@ import helpers from "../common/helpers.js";
 
 class DocumentHandler {
   constructor (config) {
-    console.log(config);
     this.stripComments = config.stripComments;
   };
 
