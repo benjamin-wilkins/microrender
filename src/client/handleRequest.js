@@ -33,7 +33,7 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
     const fragmentData = helpers.getData(Array.from(fragmentElement.attributes).map(attr => [attr.name, attr.value]));
     fragmentHeaders.set("MicroRender-Data", JSON.stringify(Array.from(fragmentData)));
 
-    let fragmentRequest = new Request(fragmentURL, this.request);
+    let fragmentRequest = new Request(fragmentURL, request);
     fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders, redirect: "manual"});
 
     const newFragment = await fetch(fragmentRequest);

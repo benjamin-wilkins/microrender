@@ -67,7 +67,7 @@ export function init(fragments, config) {
 
     if (startUrl.host == href.host && !href.pathname.startsWith("/assets")) {
       elmt.addEventListener("click", (event) => {
-        request = new Request(href);
+        const request = new Request(href);
         handleRequest.fetch(request);
         
         event.preventDefault();
