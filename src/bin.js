@@ -113,11 +113,11 @@ async function transformFiles(fragments) {
   fse.copy(path.join(cwd, "assets"), path.join(build_dir, "assets"))
 };
 
-async function addFragments(file, fragments, env, indent) {
-  await file.write(`${indent ?? ""}const fragments = new Map;\n\n`);
+async function addFragments(file, fragments, env) {
+  await file.write("const fragments = new Map;\n\n");
 
   for (const [identifier, fragment] of fragments) {
-    await file.write(`${indent ?? ""}fragments.set("${identifier}", (await import("${path.join(fragment, "fragment.js")}")).${env});\n`);
+    await file.write(`fragments.set("${identifier}", (await import("${path.join(fragment, "fragment.js")}")).${env});\n`);
   };
 
   await file.write("\n");
@@ -143,10 +143,8 @@ async function buildJS(fragments) {
 
     await browserJS.write(browserImport);
     await browserJS.write(configSetup);
-    await browserJS.write("(async () => {\n");
-    await addFragments(browserJS, fragments, "browser", "  ");
-    await browserJS.write("  init(fragments, config);\n");
-    await browserJS.write("})();");
+    await addFragments(browserJS, fragments, "browser");
+    await browserJS.write("init(fragments, config);");
   } finally {
     browserJS.close();
   };
