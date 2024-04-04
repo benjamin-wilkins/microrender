@@ -98,8 +98,8 @@ export async function control(fn, request) {
     return request._microrender.description;
   };
 
-  $.pass = (fragment) => {
-    const fragmentJS = getJS(fragment);
+  $.pass = async (fragment) => {
+    const fragmentJS = await getJS(fragment);
 
     if (fragmentJS) {
       if (fragmentJS.control) {
