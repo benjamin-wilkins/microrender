@@ -19,24 +19,20 @@ import { control, render } from "./runjs.js";
 import { getData } from "../common/helpers.js";
 
 class DocumentHandler {
-  constructor (config) {
-    this.stripComments = config.stripComments;
-  };
-
   comments = async (comment) => {
-    if (this.stripComments) {
+    if (_microrender.config.stripComments) {
       comment.remove();
     };
   };
 };
 
-async function loadFragment(fragment, request, env, fragments, config, data) {
-  const fragmentJS = fragments.get(fragment);
+async function loadFragment(fragment, request, env, data) {
+  const fragmentJS = _microrender.fragments.get(fragment);
   let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
   if (fragmentJS) {
     if (fragmentJS.render) {
-      fragmentHTML = await render(fragmentJS.render, fragmentHTML, request, env, config, data);
+      fragmentHTML = await render(fragmentJS.render, fragmentHTML, request, env, data);
     };
   };
 
@@ -45,11 +41,11 @@ async function loadFragment(fragment, request, env, fragments, config, data) {
       const name = elmt.attr("name");
       const data = getData(elmt.rewriterElement.attributes);
 
-      let newFragment = await loadFragment(name, request, env, fragments, config, data);
+      let newFragment = await loadFragment(name, request, env, data);
       newFragment = await newFragment.text();
       elmt.html(newFragment);
     })
-  }, fragmentHTML, request, env, config, data);
+  }, fragmentHTML, request, env, data);
 
   return fragmentHTML;
 };
@@ -92,29 +88,29 @@ export default {
     };
 
     const rewriter = new HTMLRewriter();
-    rewriter.onDocument(new DocumentHandler(this.config));
+    rewriter.onDocument(DocumentHandler);
 
     if (url.pathname.startsWith("/_fragment/")) {
       const name = url.pathname.split("/")[2]
       const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
 
-      const response = await loadFragment(name, request, env, this.fragments, this.config, data);
+      const response = await loadFragment(name, request, env, data);
       return rewriter.transform(response);
     };
     
-    const fragmentJS = this.fragments.get("root");
+    const fragmentJS = _microrender.fragments.get("root");
 
     if (fragmentJS) {
       if (fragmentJS.control) {
         try {
-          await control(fragmentJS.control, request, env, this.fragments, this.config);
+          await control(fragmentJS.control, request, env);
         } catch (e) {
           const errorCatcher = new ErrorCatcher(request, url, env);
           return errorCatcher.catch(e);
         };
       };
 
-      const response = await loadFragment("root", request, env, this.fragments, this.config);
+      const response = await loadFragment("root", request, env);
       return rewriter.transform(response);
     };
   }
