@@ -17,7 +17,7 @@
 import { Interrupt } from "../common/error.js";
 import { Element } from "./element.js";
 
-function addCommon($, request, config) {
+function addCommon($, request) {
   $.fetch = (resource, options) => {
     const url = new URL(resource instanceof Request ? resource.url : resource.toString());
 
@@ -25,7 +25,7 @@ function addCommon($, request, config) {
       const binding = url.pathname.split("/")[0];
       const path = url.pathname.split("/").slice(1);
 
-      if (!config.bindings.includes(binding)) {
+      if (!_microrender.config.bindings.includes(binding)) {
         throw new TypeError("Unrecognised binding");
       };
 
@@ -54,9 +54,9 @@ function addCommon($, request, config) {
   };
 };
 
-export async function control(fn, request, fragments, config) {
+export async function control(fn, request) {
   const $ = Object.create(null);
-  addCommon($, request, config);
+  addCommon($, request);
 
   $.url = (newURL, status) => {
     const currentURL = new URL(request.url);
@@ -98,11 +98,11 @@ export async function control(fn, request, fragments, config) {
   };
 
   $.pass = (fragment) => {
-    const fragmentJS = fragments.get(fragment);
+    const fragmentJS = _microrender.fragments.get(fragment);
 
     if (fragmentJS) {
       if (fragmentJS.control) {
-        return control(fragmentJS.control, request, fragments, config);
+        return control(fragmentJS.control, request);
       };
     };
   };
@@ -110,7 +110,7 @@ export async function control(fn, request, fragments, config) {
   await fn($);
 };
 
-export async function render(fn, fragmentElement, request, config) {
+export async function render(fn, fragmentElement, request) {
   const queue = [];
   
   const $ = (selector, callback) => {
@@ -120,7 +120,7 @@ export async function render(fn, fragmentElement, request, config) {
     };
   };
 
-  addCommon($, request, config);
+  addCommon($, request);
 
   $.url = () => {
     const currentURL = new URL(request.url);

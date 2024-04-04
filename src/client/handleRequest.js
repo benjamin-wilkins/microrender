@@ -18,9 +18,9 @@ import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
 import { Interrupt } from "../common/error.js";
 import { getData } from "../common/helpers.js";
-import { getJS } from "./helpers.js";
+import { getJS, preLoadJS } from "./lazy.js";
 
-async function loadFragment(fragment, fragmentElement, request, fragments, config) {
+async function loadFragment(fragment, fragmentElement, request) {
   if (fragmentElement.requiresFetch) {
 
     const fragmentURL = new URL(request.url);
@@ -54,19 +54,19 @@ async function loadFragment(fragment, fragmentElement, request, fragments, confi
     };
 
   } else {
-    const fragmentJS = await getJS(fragment, fragments);
+    const fragmentJS = await getJS(fragment, _microrender.fragments);
 
     if (fragmentJS) {
       if (fragmentJS.render) {
-        await render(fragmentJS.render, fragmentElement, request, config);
+        await render(fragmentJS.render, fragmentElement, request);
       };
     };
 
     await render(($) => {
       $("microrender-fragment", async (elmt) => {
-        await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments, config);
+        await loadFragment(elmt.attr("name"), elmt.domElement, request);
       })
-    }, fragmentElement, request, config);
+    }, fragmentElement, request);
   };
 };
 
@@ -92,7 +92,7 @@ export default {
     if (fragmentJS) {
       if (fragmentJS.control) {
         try {
-          await control(fragmentJS.control, request, this.fragments, this.config);
+          await control(fragmentJS.control, request);
         } catch (e) {
           const errorCatcher = new ErrorCatcher(request, url);
           return errorCatcher.catch(e);
@@ -100,6 +100,8 @@ export default {
       };
     };
 
-    return loadFragment("root", document, request, this.fragments, this.config);
+    setTimeout(preLoadJS);
+
+    return loadFragment("root", document, request);
   }
 };

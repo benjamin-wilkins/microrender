@@ -15,7 +15,7 @@
 */
 
 import handleRequest from "./handleRequest.js";
-import { getJS } from "./helpers.js";
+import { preLoadJS } from "./lazy.js";
 
 class MicroRenderFragment extends HTMLElement {
   static observedAttributes = ["name"];
@@ -29,8 +29,6 @@ class MicroRenderFragment extends HTMLElement {
     if (oldValue != newValue && oldValue) {
       this.requiresFetch = true;
     };
-
-    window.setTimeout(() => getJS(newValue, this.fragments));
   };
 
   get requiresFetch() {
@@ -59,16 +57,18 @@ class MicroRenderFragment extends HTMLElement {
 };
 
 export function init(fragments, config) {
-  MicroRenderFragment.prototype.fragments = fragments;
-  handleRequest.fragments = fragments;
-  handleRequest.config = config;
+  globalThis._microrender = {
+    fragments,
+    config,
+    fragmentCache: new Map
+  };
 
-  window.customElements.define("microrender-fragment", MicroRenderFragment);
+  customElements.define("microrender-fragment", MicroRenderFragment);
 
-  const startUrl = new URL(window.location.href);
+  const startUrl = new URL(location.href);
 
   for (const elmt of document.querySelectorAll("a[href]")) {
-    const href = new URL(elmt.href, window.location.href);
+    const href = new URL(elmt.href, location.href);
 
     if (startUrl.host == href.host && !href.pathname.startsWith("/assets")) {
       elmt.addEventListener("click", (event) => {
@@ -79,4 +79,6 @@ export function init(fragments, config) {
       });
     };
   };
+
+  setTimeout(preLoadJS);
 };
