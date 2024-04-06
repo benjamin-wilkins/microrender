@@ -17,7 +17,7 @@
 import { Interrupt } from "../common/error.js";
 import { ElementHandler } from "./element.js";
 
-function addCommon($, request, env, config) {
+function addCommon($, request, env) {
   $.fetch = (resource, options) => {
     const url = new URL(resource instanceof Request ? resource.url : resource.toString(), request.url);
 
@@ -25,7 +25,7 @@ function addCommon($, request, env, config) {
       const binding = url.pathname.split("/")[0];
       const path = url.pathname.split("/").slice(1);
 
-      if (!config.bindings.includes(binding)) {
+      if (!_microrender.config.bindings.includes(binding)) {
         throw new TypeError("Unrecognised binding");
       };
 
@@ -52,9 +52,9 @@ function addCommon($, request, env, config) {
   };
 };
 
-export async function control(fn, request, env, fragments, config) {
+export async function control(fn, request, env) {
   const $ = Object.create(null);
-  addCommon($, request, env, config);
+  addCommon($, request, env);
 
   $.url = (newURL, status) => {
     const currentURL = new URL(request.url);
@@ -101,12 +101,12 @@ export async function control(fn, request, env, fragments, config) {
     return request._microrender.description;
   };
 
-  $.pass = (fragment) => {
-    const fragmentJS = fragments.get(fragment);
+  $.pass = async (fragment) => {
+    const fragmentJS = _microrender.fragments.get(fragment);
 
     if (fragmentJS) {
       if (fragmentJS.control) {
-        return control(fragmentJS.control, request, env, fragments, config);
+        return control(fragmentJS.control, request, env);
       };
     };
   };
@@ -114,7 +114,7 @@ export async function control(fn, request, env, fragments, config) {
   await fn($);
 };
 
-export async function render(fn, fragmentHTML, request, env, config, data) {
+export async function render(fn, fragmentHTML, request, env, data) {
   const rewriter = new HTMLRewriter();
 
   const $ = (selector, callback) => {
@@ -122,7 +122,7 @@ export async function render(fn, fragmentHTML, request, env, config, data) {
     rewriter.on(selector, handler);
   };
 
-  addCommon($, request, env, config);
+  addCommon($, request, env);
 
   $.url = () => {
     const currentURL = new URL(request.url);

@@ -16,56 +16,40 @@
 
 import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
-import { Interrupt } from "../common/error.js";
-import helpers from "../common/helpers.js";
+import { getJS, preLoadJS } from "./lazy.js";
+import * as server from "./loadFromServer.js";
 
-async function loadFragment(fragment, fragmentElement, request, fragments, config) {
-  if (fragmentElement.requiresFetch) {
-
-    const fragmentURL = new URL(request.url);
-    fragmentURL.pathname = `/_fragment/${fragment}` + fragmentURL.pathname;
-
-    const fragmentHeaders = request.headers;
-    fragmentHeaders.set("MicroRender-Status", request._microrender.status.toString());
-    fragmentHeaders.set("MicroRender-Title", request._microrender.title);
-    fragmentHeaders.set("MicroRender-Description", request._microrender.description);
-  
-    const fragmentData = helpers.getData(Array.from(fragmentElement.attributes).map(attr => [attr.name, attr.value]));
-    fragmentHeaders.set("MicroRender-Data", JSON.stringify(Array.from(fragmentData)));
-
-    let fragmentRequest = new Request(fragmentURL, this.request);
-    fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders, redirect: "manual"});
-
-    const newFragment = await fetch(fragmentRequest);
-
-    if (newFragment.headers.get("MicroRender-Status")) {
-      const status = newFragment.headers.get("MicroRender-Status");
-
-      if (300 <= status <= 399) {
-        const location = newFragment.headers.get("MicroRender-Location");
-        throw new Interrupt("redirectResponse", Response.redirect(location, status));
-      };
-    } else if (newFragment.ok) {
-      fragmentElement.innerHTML = await newFragment.text();
-      fragmentElement.requiresFetch = false;
-    } else {
-      throw new Interrupt("errorCode", code);
-    };
-
+async function loadFragmentRender(fragment, fragmentElement, request) {
+  if (fragmentElement.requiresFetch || !_microrender.fragmentCache.has(fragment)) {
+    await server.loadFragmentRender(fragment, fragmentElement, request);
   } else {
-    const fragmentJS = fragments.get(fragment);
+    const fragmentJS = await getJS(fragment, _microrender.fragments);
 
     if (fragmentJS) {
       if (fragmentJS.render) {
-        await render(fragmentJS.render, fragmentElement, request, config);
+        await render(fragmentJS.render, fragmentElement, request);
       };
     };
 
     await render(($) => {
       $("microrender-fragment", async (elmt) => {
-        await loadFragment(elmt.attr("name"), elmt.domElement, request, fragments, config);
+        await loadFragmentRender(elmt.attr("name"), elmt.domElement, request);
       })
-    }, fragmentElement, request, config);
+    }, fragmentElement, request);
+  };
+};
+
+async function loadFragmentControl(fragment, request) {
+  if (!_microrender.fragmentCache.has(fragment)) {
+    await server.loadFragmentControl(fragment, request);
+  } else {
+    const fragmentJS = await getJS("root", _microrender.fragments);
+
+    if (fragmentJS) {
+      if (fragmentJS.control) {
+        await control(fragmentJS.control, request);
+      };
+    };
   };
 };
 
@@ -86,19 +70,13 @@ export default {
       };
     };
 
-    const fragmentJS = this.fragments.get("root");
-
-    if (fragmentJS) {
-      if (fragmentJS.control) {
-        try {
-          await control(fragmentJS.control, request, this.fragments, this.config);
-        } catch (e) {
-          const errorCatcher = new ErrorCatcher(request, url);
-          return errorCatcher.catch(e);
-        };
-      };
+    try {
+      await loadFragmentControl("root", request);
+      await loadFragmentRender("root", document, request);
+      setTimeout(preLoadJS);
+    } catch (e) {
+      const errorCatcher = new ErrorCatcher(request, url);
+      return errorCatcher.catch(e);
     };
-
-    return loadFragment("root", document, request, this.fragments, this.config);
   }
 };

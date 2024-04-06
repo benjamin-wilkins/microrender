@@ -15,6 +15,7 @@
 */
 
 import handleRequest from "./handleRequest.js";
+import { preLoadJS } from "./lazy.js";
 
 class MicroRenderFragment extends HTMLElement {
   static observedAttributes = ["name"];
@@ -56,22 +57,28 @@ class MicroRenderFragment extends HTMLElement {
 };
 
 export function init(fragments, config) {
-  window.customElements.define("microrender-fragment", MicroRenderFragment);
-  handleRequest.fragments = fragments;
-  handleRequest.config = config;
+  globalThis._microrender = {
+    fragments,
+    config,
+    fragmentCache: new Map
+  };
 
-  const startUrl = new URL(window.location.href);
+  customElements.define("microrender-fragment", MicroRenderFragment);
+
+  const startUrl = new URL(location.href);
 
   for (const elmt of document.querySelectorAll("a[href]")) {
-    const href = new URL(elmt.href, window.location.href);
+    const href = new URL(elmt.href, location.href);
 
     if (startUrl.host == href.host && !href.pathname.startsWith("/assets")) {
       elmt.addEventListener("click", (event) => {
-        request = new Request(href);
+        const request = new Request(href);
         handleRequest.fetch(request);
         
         event.preventDefault();
       });
     };
   };
+
+  setTimeout(preLoadJS);
 };

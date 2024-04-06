@@ -17,8 +17,10 @@
 import handleRequest from "./handleRequest.js";
 
 export function init(fragments, config) {
-  handleRequest.fragments = fragments;
-  handleRequest.config = config;
+  globalThis._microrender = {
+    fragments,
+    config
+  };
 
   return handleRequest;
 };

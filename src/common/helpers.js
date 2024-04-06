@@ -14,19 +14,17 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export default {
-  getData(attributes) {
-    // Get a map of an element's data-* attributes
-    // Similar to DOM Element.dataset, but returns kebab-cased attributes, not camelCased attributes.
+export function getData(attributes) {
+  // Get a map of an element's data-* attributes
+  // Similar to DOM Element.dataset, but returns kebab-cased attributes, not camelCased attributes.
 
-    const data = new Map;
+  const data = new Map;
 
-    for (const [attr, value] of attributes) {
-      if (attr.startsWith("data-")) {
-        data.set(attr.slice(5), value);
-      };
+  for (const [attr, value] of attributes) {
+    if (attr.startsWith("data-")) {
+      data.set(attr.slice(5), value);
     };
+  };
 
-    return data;
-  }
+  return data;
 };

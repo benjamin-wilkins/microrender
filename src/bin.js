@@ -39,6 +39,7 @@ const command = process.argv[2];
 const cwd = process.cwd();
 const microrender_dir = path.dirname(fileURLToPath(import.meta.url));
 const build_dir = path.join(cwd, "build");
+const tmp_dir = path.join(cwd, "tmp");
 const configPath = path.join(cwd, "microrender.config.js");
 
 const config = Object.assign({}, defaultConfig, (await import(configPath))[env]);
@@ -102,6 +103,7 @@ async function getFragments() {
 };
 
 async function transformFiles(fragments) {
+  await fse.emptyDir(tmp_dir);
   await fse.emptyDir(build_dir);
 
   for (const [identifier, fragment] of fragments) {
@@ -111,49 +113,67 @@ async function transformFiles(fragments) {
   fse.copy(path.join(cwd, "assets"), path.join(build_dir, "assets"))
 };
 
-async function addFragments(file, fragments, env, indent) {
-  await file.write(`${indent ?? ""}const fragments = new Map;\n\n`);
+async function addFragments(file, fragments, env) {
+  await file.write("const fragments = new Map;\n\n");
 
   for (const [identifier, fragment] of fragments) {
-    await file.write(`${indent ?? ""}fragments.set("${identifier}", (await import("${path.join(fragment, "fragment.js")}")).${env});\n`);
+    const fragmentPath = path.join(fragment, "fragment.js")
+    let loader;
+
+    if (env == "browser") {
+      loader = `() => import("${fragmentPath}").then(x => x.browser)`;
+    } else {
+      loader = `await import("${fragmentPath}").then(x => x.server)`;
+    };
+
+    await file.write(`fragments.set("${identifier}", ${loader});\n`);
   };
 
   await file.write("\n");
 };
 
 async function buildJS(fragments) {
-  let workerJS;
+  let serverJS;
   let browserJS;
 
   try {
-    workerJS = await fs.open(path.join(build_dir, "_worker.js"), "w");
+    serverJS = await fs.open(path.join(tmp_dir, "server.js"), "w");
 
-    await workerJS.write(serverImport);
-    await workerJS.write(configSetup);
-    await addFragments(workerJS, fragments, "server");
-    await workerJS.write("export default init(fragments, config);")
+    await serverJS.write(serverImport);
+    await serverJS.write(configSetup);
+    await addFragments(serverJS, fragments, "server");
+    await serverJS.write("export default init(fragments, config);")
   } finally {
-    workerJS.close();
+    serverJS.close();
   };
 
   try {
-    browserJS = await fs.open(path.join(build_dir, "_browser.js"), "w");
+    browserJS = await fs.open(path.join(tmp_dir, "browser.js"), "w");
 
     await browserJS.write(browserImport);
     await browserJS.write(configSetup);
-    await browserJS.write("(async () => {\n");
-    await addFragments(browserJS, fragments, "browser", "  ");
-    await browserJS.write("  init(fragments, config);\n");
-    await browserJS.write("})();");
+    await addFragments(browserJS, fragments, "browser");
+    await browserJS.write("init(fragments, config);");
   } finally {
     browserJS.close();
   };
 
   await esbuild.build({
-    entryPoints: [path.join(build_dir, "_browser.js")],
+    entryPoints: [path.join(tmp_dir, "server.js")],
     bundle: true,
-    outfile: path.join(build_dir, "assets/microrender.js"),
-    sourcemap: true
+    outfile: path.join(build_dir, "_worker.js"),
+    sourcemap: config.sourceMap,
+    format: "esm",
+    splitting: false
+  });
+
+  await esbuild.build({
+    entryPoints: [path.join(tmp_dir, "browser.js")],
+    bundle: true,
+    outdir: path.join(build_dir, "assets/microrender"),
+    sourcemap: config.sourceMap,
+    format: "esm",
+    splitting: true
   });
 };
 
@@ -166,6 +186,7 @@ async function build() {
 
 async function clean() {
   await fse.remove(build_dir);
+  await fse.remove(tmp_dir);
 };
 
 if (command == undefined | command == "help") {

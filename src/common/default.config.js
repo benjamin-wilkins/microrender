@@ -6,4 +6,5 @@ export default {
   bindings: new Map,
   plugins: [],
   stripComments: false,
+  sourceMap: false
 };
