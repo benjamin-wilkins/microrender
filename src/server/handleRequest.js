@@ -26,7 +26,7 @@ class DocumentHandler {
   };
 };
 
-async function loadFragment(fragment, request, env, data) {
+async function loadFragmentRender(fragment, request, env, data) {
   const fragmentJS = _microrender.fragments.get(fragment);
   let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
@@ -41,13 +41,23 @@ async function loadFragment(fragment, request, env, data) {
       const name = elmt.attr("name");
       const data = getData(elmt.rewriterElement.attributes);
 
-      let newFragment = await loadFragment(name, request, env, data);
+      let newFragment = await loadFragmentRender(name, request, env, data);
       newFragment = await newFragment.text();
       elmt.html(newFragment);
     })
   }, fragmentHTML, request, env, data);
 
   return fragmentHTML;
+};
+
+async function loadFragmentControl(fragment, request, env) {
+  const fragmentJS = _microrender.fragments.get(fragment);
+
+  if (fragmentJS) {
+    if (fragmentJS.control) {
+      await control(fragmentJS.control, request, env);
+    };
+  };
 };
 
 export default {
@@ -90,28 +100,35 @@ export default {
     const rewriter = new HTMLRewriter();
     rewriter.onDocument(DocumentHandler);
 
-    if (url.pathname.startsWith("/_fragment/")) {
-      const name = url.pathname.split("/")[2]
-      const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
+    try {
+      if (url.pathname.startsWith("/_fragment/")) {
+        const name = url.pathname.split("/")[2];
+        const hook = url.pathname.split("/")[3];
 
-      const response = await loadFragment(name, request, env, data);
-      return rewriter.transform(response);
-    };
-    
-    const fragmentJS = _microrender.fragments.get("root");
+        if (hook == "control") {
+          await loadFragmentControl(name, request, env);
+          const response = new Response;
 
-    if (fragmentJS) {
-      if (fragmentJS.control) {
-        try {
-          await control(fragmentJS.control, request, env);
-        } catch (e) {
-          const errorCatcher = new ErrorCatcher(request, url, env);
-          return errorCatcher.catch(e);
+          response.headers.set("MicroRender-Status", request._microrender.status);
+          response.headers.set("MicroRender-Title", request._microrender.title);
+          response.headers.set("MicroRender-Description", request._microrender.description);
+
+          return response;
+        } else if (hook == "render") {
+          const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
+          const response = await loadFragmentRender(name, request, env, data);
+          return rewriter.transform(response);
+        } else {
+          throw new Error(`Unrecognised hook ${hook}`);
         };
       };
 
-      const response = await loadFragment("root", request, env);
+      await loadFragmentControl("root", request, env);
+      const response = await loadFragmentRender("root", request, env, new Map);
       return rewriter.transform(response);
+    } catch (e) {
+      const errorCatcher = new ErrorCatcher(request, url, env);
+      return errorCatcher.catch(e);
     };
   }
 };

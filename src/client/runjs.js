@@ -17,6 +17,7 @@
 import { Interrupt } from "../common/error.js";
 import { Element } from "./element.js";
 import { getJS } from "./lazy.js";
+import * as server from "./loadFromServer.js";
 
 function addCommon($, request) {
   $.fetch = (resource, options) => {
@@ -99,11 +100,15 @@ export async function control(fn, request) {
   };
 
   $.pass = async (fragment) => {
-    const fragmentJS = await getJS(fragment);
+    if (!_microrender.fragmentCache.has(fragment)) {
+      await server.loadFragmentControl(fragment, request);
+    } else {
+      const fragmentJS = await getJS(fragment);
 
-    if (fragmentJS) {
-      if (fragmentJS.control) {
-        return control(fragmentJS.control, request);
+      if (fragmentJS) {
+        if (fragmentJS.control) {
+          await control(fragmentJS.control, request);
+        };
       };
     };
   };
