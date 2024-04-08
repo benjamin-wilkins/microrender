@@ -14,7 +14,6 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import {decode} from 'html-entities';
 
 class Element {
   // Wrapper for HTMLRewriter Element APIs. These are similar to
@@ -26,7 +25,7 @@ class Element {
   };
 
   getAttribute = (attr) => {
-    return decode(this.rewriterElement.getAttribute(attr));
+    return this.rewriterElement.getAttribute(attr);
   };
 
   hasAttribute = (attr) => {
