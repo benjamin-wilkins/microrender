@@ -81,6 +81,18 @@ export async function control(fn, request) {
     return request._microrender.status;
   };
 
+  $.cookie = (name, value, options) => {
+    if (typeof value != "undefined") {
+      const optionString = Object.entries(options).map(option => option.join("=")).join("; ");
+      document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; ${optionString}`;
+
+      request._microrender.cookies.set(name, value);
+      return;
+    };
+
+    return request._microrender.cookies.get(name);
+  };
+
   $.title = (title) => {
     if (typeof title != "undefined") {
       request._microrender.title = title;
@@ -135,6 +147,10 @@ export async function render(fn, fragmentElement, request) {
 
   $.error = () => {
     return request._microrender.status;
+  };
+
+  $.cookie = (name) => {
+    return request._microrender.cookies.get(name);
   };
 
   $.title = () => {

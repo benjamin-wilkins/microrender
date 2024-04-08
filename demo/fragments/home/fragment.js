@@ -16,6 +16,7 @@
 
 async function control ($) {
   await $.pass("form");
+  await $.pass("visit-counter")
 
   if (!$.title()) {
     $.title("Home");

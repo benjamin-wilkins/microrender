@@ -50,14 +50,16 @@ async function loadFragmentRender(fragment, request, env, data) {
   return fragmentHTML;
 };
 
-async function loadFragmentControl(fragment, request, env) {
+async function loadFragmentControl(fragment, request, env, headers) {
   const fragmentJS = _microrender.fragments.get(fragment);
 
   if (fragmentJS) {
     if (fragmentJS.control) {
-      await control(fragmentJS.control, request, env);
+      await control(fragmentJS.control, request, env, headers);
     };
   };
+
+  return headers;
 };
 
 export default {
@@ -83,7 +85,8 @@ export default {
       request._microrender = {
         status: 200,
         title: "",
-        description: ""
+        description: "",
+        cookies: new Map
       };
 
       if (url.pathname.startsWith("/_fragment/")) {
@@ -92,8 +95,18 @@ export default {
         request._microrender.description = request.headers.get("MicroRender-Description");
       };
 
-      if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
+      if (request.method == "POST" && request.headers.get("content-type").includes("form")) {
         request._microrender.formData = await request.formData();
+      };
+
+      if (request.headers.get("Cookie")) {
+        request._microrender.cookies = new Map(
+          (request.headers.get("Cookie") || "")
+          .split(";")
+          .map(cookie => cookie.split("=")
+            .map(x => x.trim())
+          )
+        );
       };
     };
 
@@ -106,8 +119,8 @@ export default {
         const hook = url.pathname.split("/")[3];
 
         if (hook == "control") {
-          await loadFragmentControl(name, request, env);
-          const response = new Response;
+          const headers = await loadFragmentControl(name, request, env, new Headers);
+          const response = new Response(null, {headers});
 
           response.headers.set("MicroRender-Status", request._microrender.status);
           response.headers.set("MicroRender-Title", request._microrender.title);
@@ -123,8 +136,13 @@ export default {
         };
       };
 
-      await loadFragmentControl("root", request, env);
+      const headers = await loadFragmentControl("root", request, env, new Headers);
       const response = await loadFragmentRender("root", request, env, new Map);
+
+      for (const [header, value] of headers.entries()) {
+        response.headers.append(header, value);
+      };
+
       return rewriter.transform(response);
     } catch (e) {
       const errorCatcher = new ErrorCatcher(request, url, env);

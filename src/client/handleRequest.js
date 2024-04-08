@@ -62,12 +62,23 @@ export default {
       request._microrender = {
         status: 200,
         title: "",
-        description: ""
+        description: "",
+        cookies: new Map
       };
 
       if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
         request._microrender.formData = await request.formData();
       };
+
+      if (document.cookie) {
+        request._microrender.cookies = new Map(
+          document.cookie
+          .split(";")
+          .map(cookie => cookie.split("=")
+            .map(x => x.trim())
+          )
+        );
+      }
     };
 
     try {

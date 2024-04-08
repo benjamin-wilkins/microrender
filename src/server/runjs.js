@@ -52,7 +52,7 @@ function addCommon($, request, env) {
   };
 };
 
-export async function control(fn, request, env) {
+export async function control(fn, request, env, headers) {
   const $ = Object.create(null);
   addCommon($, request, env);
 
@@ -83,6 +83,18 @@ export async function control(fn, request, env) {
     return request._microrender.status;
   };
 
+  $.cookie = (name, value, options) => {
+    if (typeof value != "undefined") {
+      const optionString = Object.entries(options).map(option => option.join("=")).join("; ");
+      headers.append("Set-Cookie", `${encodeURIComponent(name)}=${encodeURIComponent(value)}; ${optionString}`);
+
+      request._microrender.cookies.set(name, value);
+      return;
+    };
+
+    return request._microrender.cookies.get(name);
+  };
+
   $.title = (title) => {
     if (typeof title != "undefined") {
       request._microrender.title = title;
@@ -106,7 +118,7 @@ export async function control(fn, request, env) {
 
     if (fragmentJS) {
       if (fragmentJS.control) {
-        return control(fragmentJS.control, request, env);
+        return control(fragmentJS.control, request, env, headers);
       };
     };
   };
@@ -138,6 +150,10 @@ export async function render(fn, fragmentHTML, request, env, data) {
 
   $.error = () => {
     return request._microrender.status;
+  };
+
+  $.cookie = (name) => {
+    return request._microrender.cookies.get(name);
   };
 
   $.title = () => {
