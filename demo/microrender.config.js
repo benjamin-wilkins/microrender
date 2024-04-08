@@ -21,6 +21,7 @@
 
 export const local = {
   bindings: ["backend"],
+  stripComments: false,
   sourceMap: true,
   minify: false
 };
@@ -28,11 +29,13 @@ export const local = {
 export const staging = {
   bindings: ["backend"],
   stripComments: true,
+  sourceMap: false,
   minify: true
 };
 
 export const production = {
   bindings: ["backend"],
   stripComments: true,
+  sourceMap: false,
   minify: true
 };

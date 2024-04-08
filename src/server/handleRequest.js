@@ -18,12 +18,12 @@ import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
 import { getData } from "../common/helpers.js";
 
-class DocumentHandler {
-  comments = async (comment) => {
+const finishingTouches = {
+  comments: async (comment) => {
     if (_microrender.config.stripComments) {
       comment.remove();
     };
-  };
+  }
 };
 
 async function loadFragmentRender(fragment, request, env, data) {
@@ -111,7 +111,7 @@ export default {
     };
 
     const rewriter = new HTMLRewriter();
-    rewriter.onDocument(DocumentHandler);
+    rewriter.onDocument(finishingTouches);
 
     try {
       if (url.pathname.startsWith("/_fragment/")) {
