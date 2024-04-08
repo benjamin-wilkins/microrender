@@ -164,7 +164,8 @@ async function buildJS(fragments) {
     outfile: path.join(build_dir, "_worker.js"),
     sourcemap: config.sourceMap,
     format: "esm",
-    splitting: false
+    splitting: false,
+    minify: config.minify
   });
 
   await esbuild.build({
@@ -173,7 +174,8 @@ async function buildJS(fragments) {
     outdir: path.join(build_dir, "assets/microrender"),
     sourcemap: config.sourceMap,
     format: "esm",
-    splitting: true
+    splitting: true,
+    minify: config.minify
   });
 };
 

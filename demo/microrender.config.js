@@ -21,15 +21,18 @@
 
 export const local = {
   bindings: ["backend"],
-  sourceMap: true
+  sourceMap: true,
+  minify: false
 };
 
 export const staging = {
   bindings: ["backend"],
-  stripComments: true
+  stripComments: true,
+  minify: true
 };
 
 export const production = {
   bindings: ["backend"],
-  stripComments: true
+  stripComments: true,
+  minify: true
 };
