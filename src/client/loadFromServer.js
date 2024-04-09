@@ -32,7 +32,7 @@ function createRequest(fragment, request, hook, headers) {
   };
 
   let fragmentRequest = new Request(fragmentURL, request);
-  fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders});
+  fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders, credentials: "include"});
 
   return fragmentRequest;
 };

@@ -82,6 +82,9 @@ export async function control(fn, request) {
   };
 
   $.cookie = (name, value, options) => {
+    options = options || Object.create(null);
+    options.path = "/";
+
     if (typeof value != "undefined") {
       const optionString = Object.entries(options).map(option => option.join("=")).join("; ");
       document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; ${optionString}`;
