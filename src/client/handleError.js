@@ -47,6 +47,7 @@ export class ErrorCatcher {
               this.catchError(new Error(`Unrecognised redirect code ${e.cause.status}`));
           };
 
+          history.replaceState(null, "", newURL);
           return handleRequest.fetch(request);
 
         case "errorCode":

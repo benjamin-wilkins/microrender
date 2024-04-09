@@ -56,7 +56,6 @@ async function loadFragmentControl(fragment, request) {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    window.history.pushState(null, "", url);
 
     if (!request._microrender) {
       request._microrender = {
@@ -87,7 +86,7 @@ export default {
       setTimeout(preLoadJS);
     } catch (e) {
       const errorCatcher = new ErrorCatcher(request, url);
-      return errorCatcher.catch(e);
+      errorCatcher.catch(e);
     };
   }
 };

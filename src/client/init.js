@@ -63,6 +63,14 @@ export function init(fragments, config) {
     fragmentCache: new Map
   };
 
+  globalThis.microrender = {
+    navigate(resource) {
+      const request = new Request(resource);
+      handleRequest.fetch(request);
+      window.history.pushState(null, "", request.url);
+    }
+  };
+
   customElements.define("microrender-fragment", MicroRenderFragment);
 
   const startUrl = new URL(location.href);
@@ -72,13 +80,16 @@ export function init(fragments, config) {
 
     if (startUrl.host == href.host && !href.pathname.startsWith("/assets")) {
       elmt.addEventListener("click", (event) => {
-        const request = new Request(href);
-        handleRequest.fetch(request);
-        
+        microrender.navigate(href);
         event.preventDefault();
       });
     };
   };
+
+  addEventListener("popstate", () => {
+    const request = new Request(location.href);
+    handleRequest.fetch(request);
+  });
 
   setTimeout(preLoadJS);
 };
