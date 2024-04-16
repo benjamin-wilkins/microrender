@@ -25,23 +25,21 @@ async function control ($) {
 async function render ($) {
   const url = new URL($.url());
 
-  if ($.form && $.form("name")) {
-    const name = $.form("name");
+  let name = undefined;
 
+  if ($.form && $.form("name")) {
+    name = $.form("name");
+  } else if (url.searchParams.has("name")) {
+    name = url.searchParams.get("name");
+  };
+
+  if (typeof name != "undefined") {
     $("#form-result", (elmt) => {elmt.text(name)});
     $("#form-method", (elmt) => {elmt.text("POST")});
-    $("#form-output", (elmt) => {elmt.style("display", "")});
-  } else if (url.searchParams.has("name")) {
-    const name = url.searchParams.get("name");
-    
-    $("#form-result", (elmt) => {elmt.text(name)});
-    $("#form-method", (elmt) => {elmt.text("GET")});
     $("#form-output", (elmt) => {elmt.style("display", "")});
   } else {
     $("#form-output", (elmt) => {elmt.style("display", "none")});
   };
-
-  $("#form-output", (elmt) => {console.log(elmt.style("display"))});
 };
 
 export const server = {render, control};

@@ -119,8 +119,6 @@ class Element {
       );
     };
 
-    console.log(styles)
-
     // Remove added blank style
     styles.delete("");
 
