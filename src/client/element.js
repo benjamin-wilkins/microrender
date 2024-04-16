@@ -81,7 +81,7 @@ export class Element {
     // Gets style from the style property, not computed styles,
     // in order to match server.
 
-    return this.domElement.style.getProperty(property);
+    return this.domElement.style.getPropertyValue(property);
   };
 
   setStyle = (property, value) => {
