@@ -86,43 +86,58 @@ class Element {
     // No style attribute
     if (!this.hasAttribute("style")) return;
 
-    for (const declaration of this.getAttribute("style").split(";")) {
-      if (declaration.split(":")[0].trim() == property) {
-        // Found property!
-        return declaration.split(":")[1].trim();
-      };
-    };
+    // Parse styles into map
+    const styles = new Map(
+      this.getAttribute("style")
+      .split(";")
+      .map(declaration =>
+        declaration.split(":")
+        .map(x => x.trim())
+      )
+    );
 
-    return; // No style set for this property
+    // Remove added blank style
+    styles.delete("");
+
+    return styles.get(property);
   };
 
   setStyle = (property, value) => {
     // No HTMLRewriter style API so parses the attribute manually.
 
-    // Store all styles in a map
-    const styles = new Map();
+    // Parse styles into map
+    let styles = new Map;
 
-    if (this.hasAttribute("style")) {
-      for (const declaration of this.getAttribute("style").split(";")) {
-        styles.set(declaration.split(":")[0].trim(), declaration.split(":")[1].trim());
-      };
-    }
+    if (this.getAttribute("style")) {
+      styles = new Map(
+        this.getAttribute("style")
+        .split(";")
+        .map(declaration => 
+          declaration.split(":")
+          .map(x => x.trim())
+        )
+      );
+    };
+
+    console.log(styles)
+
+    // Remove added blank style
+    styles.delete("");
 
     // Update the property
-    if (value = "" || value == null) {
+    if (value == "" || value == null) {
       styles.delete(property);
     } else {
       styles.set(property, value);
     };
 
     // Serialise the styles map into the style attribute
-    let styleValue = "";
-
-    for (const [property, value] of styles) {
-      styleValue += `${property}: ${value};`;
-    };
-
-    this.setAttribute("style", styleValue);
+    this.setAttribute(
+      "style",
+      Array.from(styles.entries())
+      .map(declaration => declaration.join(": "))
+      .join("; ")
+    );
   };
 
   removeStyle = (property) => {
@@ -154,7 +169,7 @@ class Element {
     // No HTMLRewriter classList API so parses the attribute manually.
 
     // Store all classes in an array
-    let classList = this.getAttribute("class").split(" ") || new Array();
+    let classList = this.hasAttribute("class") ? this.getAttribute("class").split(" ") : new Array();
 
     if (value == true && !classList.includes($class)) {
       // Add the class to the classList array
