@@ -103,7 +103,8 @@ export default {
         request._microrender.cookies = new Map(
           (request.headers.get("Cookie") || "")
           .split(";")
-          .map(cookie => cookie.split("=")
+          .map(cookie => 
+            cookie.split("=")
             .map(x => x.trim())
           )
         );

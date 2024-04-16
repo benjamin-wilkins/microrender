@@ -73,17 +73,37 @@ export function init(fragments, config) {
 
   customElements.define("microrender-fragment", MicroRenderFragment);
 
-  const startUrl = new URL(location.href);
-
   for (const elmt of document.querySelectorAll("a[href]")) {
     const href = new URL(elmt.href, location.href);
 
-    if (startUrl.host == href.host && !href.pathname.startsWith("/assets")) {
+    if (new URL(location.href).host == href.host && !href.pathname.startsWith("/assets")) {
       elmt.addEventListener("click", (event) => {
         microrender.navigate(href);
         event.preventDefault();
       });
     };
+  };
+
+  for (const elmt of document.querySelectorAll("form")) {
+    elmt.addEventListener("submit", (event) => {
+      const method = event.submitter?.formMethod || elmt.method;
+      const action = new URL(event.submitter?.formAction || elmt.action, location.href);
+      const formData = new FormData(elmt, event.submitter);
+
+      if (new URL(location.href).host == action.host) {
+        let request;
+
+        if (method.toUpperCase() == "GET") {
+          action.search = new URLSearchParams(formData).toString();
+          request = new Request(action, {method: "GET"});
+        } else if (method.toUpperCase() == "POST") {
+          request = new Request(action, {method: "POST", body: formData});
+        };
+
+        microrender.navigate(request);
+        event.preventDefault();
+      };
+    });
   };
 
   addEventListener("popstate", () => {

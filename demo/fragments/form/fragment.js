@@ -15,15 +15,30 @@
 */
 
 async function control ($) {
-  if ($.form) {
+  const url = new URL($.url());
+
+  if ($.form || url.search) {
     $.title("Form Result");
   };
 };
 
 async function render ($) {
-  if ($.form) {
-    const name = $.form("name");
-    $("#form-result", (elmt) => {elmt.text(`Your name is: ${name}.`);})
+  const url = new URL($.url());
+
+  let name = undefined;
+
+  if ($.form && $.form("name")) {
+    name = $.form("name");
+  } else if (url.searchParams.has("name")) {
+    name = url.searchParams.get("name");
+  };
+
+  if (typeof name != "undefined") {
+    $("#form-result", (elmt) => {elmt.text(name)});
+    $("#form-method", (elmt) => {elmt.text("POST")});
+    $("#form-output", (elmt) => {elmt.style("display", "")});
+  } else {
+    $("#form-output", (elmt) => {elmt.style("display", "none")});
   };
 };
 
