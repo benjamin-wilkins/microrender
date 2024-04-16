@@ -16,9 +16,22 @@
 
 <div class="bordered">
   Form Fragment
-  <form method="POST">
+  <p>Enter name:</p>
+
+  <form method="POST" action="/">
+    <label>POST: </label>
     <input name="name" placeholder="Name">
-    <input type="submit">
+    <input type="submit" value="Submit">
   </form>
-  <p id="form-result"></p>
+
+  <form method="GET" action="/">
+    <label>GET: </label>
+    <input name="name" placeholder="Name">
+    <input type="submit" value="Submit">
+  </form>
+
+  <div id="form-output" style="display: none;">
+    <p>Your name is <span id="form-result"></span>.</p>
+    <p>The request method was <span id="form-method"></span>.</p>
+  </div>
 </div>
