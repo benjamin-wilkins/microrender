@@ -15,7 +15,7 @@
 */
 
 export function getData(attributes) {
-  // Get a map of an element's data-* attributes
+  // Get a map of an element's data-* attributes.
   // Similar to DOM Element.dataset, but returns kebab-cased attributes, not camelCased attributes.
 
   const data = new Map;
@@ -27,4 +27,29 @@ export function getData(attributes) {
   };
 
   return data;
+};
+
+export function parseInterval(string) {
+  // Convert an interval (eg. "1s", "300ms") to milliseconds.
+
+  // Get the number part
+  let ms = parseInt(string);
+
+  // Get the unit by removing the number
+  const unit = string.slice(ms.toString().length);
+
+  // Convert to ms by multiplying through each unit
+  switch (unit) {
+    case "h":
+      ms *= 60;
+    case "m":
+      ms *= 60;
+    case "s":
+      ms *= 1000;
+    case "ms":
+      return ms;
+    default:
+      // Unrecognised unit
+      return NaN;
+  };
 };
