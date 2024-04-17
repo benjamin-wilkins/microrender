@@ -57,22 +57,14 @@ export async function control(fn, request, env, headers) {
   addCommon($, request, env);
 
   $.url = (newURL, status) => {
-    const currentURL = new URL(request.url);
-
-    if (currentURL.pathname.startsWith("/_fragment/")) {
-      const path = currentURL.pathname.split("/");
-      path.splice(1, 2);
-      currentURL.pathname = path.join("/");
-    };
-
     if (typeof newURL != "undefined") {
       if (typeof newURL == "string") {
-        newURL = new URL(newURL, currentURL);
+        newURL = new URL(newURL, request._microrender.url);
       };
       throw new Interrupt("redirectResponse", Response.redirect(newURL, status));
     };
 
-    return currentURL;
+    return request._microrender.url;
   };
 
   $.error = (code) => {
@@ -140,15 +132,7 @@ export async function render(fn, fragmentHTML, request, env, data) {
   addCommon($, request, env);
 
   $.url = () => {
-    const currentURL = new URL(request.url);
-
-    if (currentURL.pathname.startsWith("/_fragment/")) {
-      const path = currentURL.pathname.split("/");
-      path.splice(1, 2);
-      currentURL.pathname = path.join("/");
-    };
-
-    return currentURL;
+    return request._microrender.url;
   };
 
   $.error = () => {

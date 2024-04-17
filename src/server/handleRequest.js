@@ -83,10 +83,11 @@ export default {
 
     if (!request._microrender) {
       request._microrender = {
+        url: new URL(request.url),
         status: 200,
         title: "",
         description: "",
-        cookies: new Map
+        cookies: new Map,
       };
 
       if (url.pathname.startsWith("/_fragment/")) {
@@ -109,10 +110,18 @@ export default {
           )
         );
       };
+
+      if (request._microrender.url.pathname.startsWith("/_fragment/")) {
+        const path = request._microrender.url.pathname.split("/");
+        path.splice(1, 2);
+        request._microrender.url.pathname = path.join("/");
+      };
     };
 
     const rewriter = new HTMLRewriter();
     rewriter.onDocument(finishingTouches);
+
+    console.log(JSON.stringify(request))
 
     try {
       if (url.pathname.startsWith("/_fragment/")) {

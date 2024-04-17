@@ -19,7 +19,7 @@ import { control, render } from "./runjs.js";
 import { getJS, preLoadJS } from "./lazy.js";
 import * as server from "./loadFromServer.js";
 
-async function loadFragmentRender(fragment, fragmentElement, request) {
+export async function loadFragmentRender(fragment, fragmentElement, request) {
   if (fragmentElement.requiresFetch || !_microrender.fragmentCache.has(fragment)) {
     await server.loadFragmentRender(fragment, fragmentElement, request);
   } else {
@@ -59,6 +59,7 @@ export default {
 
     if (!request._microrender) {
       request._microrender = {
+        url: new URL(request.url),
         status: 200,
         title: "",
         description: "",
@@ -77,7 +78,7 @@ export default {
             .map(x => x.trim())
           )
         );
-      }
+      };
     };
 
     try {

@@ -61,16 +61,14 @@ export async function control(fn, request) {
   addCommon($, request);
 
   $.url = (newURL, status) => {
-    const currentURL = new URL(request.url);
-
     if (typeof newURL != "undefined") {
       if (typeof newURL == "string") {
-        newURL = new URL(newURL, currentURL);
+        newURL = new URL(newURL, request._microrender.url);
       };
       throw new Interrupt("redirectResponse", Response.redirect(newURL, status));
     };
 
-    return currentURL;
+    return request._microrender.url;
   };
 
   $.error = (code) => {
@@ -144,8 +142,7 @@ export async function render(fn, fragmentElement, request) {
   addCommon($, request);
 
   $.url = () => {
-    const currentURL = new URL(request.url);
-    return currentURL;
+    return request._microrender.url;
   };
 
   $.error = () => {
