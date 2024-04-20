@@ -15,26 +15,16 @@
 */
 import { Interrupt } from "../common/error.js";
 import { getData } from "../common/helpers.js";
+import { serialise, deserialise } from "../common/helpers.js";
 
 function createRequest(fragment, request, hook, headers) {
-  const fragmentURL = new URL(request.url);
+  const fragmentURL = new URL(request._microrender.url);
   fragmentURL.pathname = `/_fragment/${fragment}/${hook}` + fragmentURL.pathname;
 
-  const fragmentHeaders = new Headers(request.headers);
-  fragmentHeaders.set("MicroRender-Status", request._microrender.status.toString());
-  fragmentHeaders.set("MicroRender-Title", request._microrender.title);
-  fragmentHeaders.set("MicroRender-Description", request._microrender.description);
+  const fragmentHeaders = headers || new Headers;
+  fragmentHeaders.set("MicroRender-Request", serialise(request._microrender));
 
-  if (headers) {
-    for (const [header, value] of headers) {
-      fragmentHeaders.set(header, value);
-    };
-  };
-
-  let fragmentRequest = new Request(fragmentURL, request);
-  fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders, credentials: "include"});
-
-  return fragmentRequest;
+  return new Request(fragmentURL, {headers: fragmentHeaders, credentials: "include"});
 };
 
 export async function loadFragmentRender(fragment, fragmentElement, request) {
@@ -58,14 +48,11 @@ export async function loadFragmentControl(fragment, request) {
   const response = await fetch(fragmentRequest);
 
   if (response.ok) {
-    request._microrender.title = response.headers.get("MicroRender-Title");
-    request._microrender.description = response.headers.get("MicroRender-Description");
+    request._microrender = deserialise(response.headers.get("MicroRender-Request"));
 
-    const status = parseInt(response.headers.get("MicroRender-Status"));
-
-    if (300 <= status && status <= 399) {
+    if (300 <= request._microrender.statue && request._microrender.status <= 399) {
       const location = response.headers.get("MicroRender-Location");
-      throw new Interrupt("redirectResponse", Response.redirect(location, status));
+      throw new Interrupt("redirectResponse", Response.redirect(location, request._microrender.status));
     };
   } else {
     throw new Interrupt("errorCode", response.status);

@@ -48,7 +48,6 @@ fragment.
 | `Element.class($class: string, ?value: bool)` => `boolean`            | ✅ | Shorthand for `(get/set)Class()`                                                          |
 | `Element.value(?value: string)` => `string`                           | ✅ | Modify/read the value attribute/property of an element.                                   |
 | `$.data(attr: string)` => `string` \| `void`                          | ✅ | Get data-* attributes from the fragment element.                                          |
-| `$.interval(fn: (...args) => boolean, ms: number, ?...args)` => `void`| ⬜ | Wrapper around `setInterval`. Functions should return `false` to stop or run only once.   |
 
 ## Control APIs
 
@@ -73,5 +72,6 @@ These are HTML and CSS APIs for defining and using fragments.
 |------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
 | HTML `<microrender-fragment name="">`                                 | ✅ | Embed another fragment within this fragment.                                              |
 | HTML `name="microrender:js"`                                          | ✅ | Add the browser JS to the page.                                                           |
-| HTML `data-*=""`                                                      | ✅ | Add parameters to a fragment. These can be accessed in the `render` hook using `$.data`   |
+| HTML `data-*=""`                                                      | ✅ | Add parameters to a fragment. These can be accessed in the `render` hook using `$.data`.  |
+| HTML `microrender-timeout=""`                                         | ✅ | Refresh the fragment after the timeout. Only calls the `control` hook.                    |
 | CSS `:states(--requires-fetch)` (`.state--requires-fetch` polyfill)   | ✅ | CSS selector for fragments that need to be fetched from the server.                       |
