@@ -25,17 +25,24 @@ async function control ($) {
 async function render ($) {
   const url = new URL($.url());
 
-  let name = undefined;
+  let form = false;
+  let name;
+  let method;
 
   if ($.form && $.form("name")) {
+    form = true;
     name = $.form("name");
+    method = "POST";
+
   } else if (url.searchParams.has("name")) {
+    form = true;
     name = url.searchParams.get("name");
+    method = "GET";
   };
 
-  if (typeof name != "undefined") {
+  if (form) {
     $("#form-result", (elmt) => {elmt.text(name)});
-    $("#form-method", (elmt) => {elmt.text("POST")});
+    $("#form-method", (elmt) => {elmt.text(method)});
     $("#form-output", (elmt) => {elmt.style("display", "")});
   } else {
     $("#form-output", (elmt) => {elmt.style("display", "none")});
