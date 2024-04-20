@@ -16,51 +16,18 @@
 
 import handleRequest from "./handleRequest.js";
 import { preLoadJS } from "./lazy.js";
-
-class MicroRenderFragment extends HTMLElement {
-  static observedAttributes = ["name"];
-
-  constructor () {
-    super();
-    this.internals_ = this.attachInternals();
-  };
-
-  attributeChangedCallback(name, oldValue, newValue) {
-    if (oldValue != newValue && oldValue) {
-      this.requiresFetch = true;
-    };
-  };
-
-  get requiresFetch() {
-    if (this.internals_.states) {
-      return this.internals_.states.has("--requires-fetch");
-    } else {
-      return this.classList.contains("state--requires-fetch");
-    };
-  };
-
-  set requiresFetch(flag) {
-    if (flag) {
-      if (this.internals_.states) {
-        this.internals_.states.add("--requires-fetch");
-      } else {
-        this.classList.add("state--requires-fetch");
-      };
-    } else {
-      if (this.internals_.states) {
-        this.internals_.states.delete("--requires-fetch");
-      } else {
-        this.classList.remove("state--requires-fetch");
-      };
-    };
-  };
-};
+import { deserialise } from "../common/helpers.js";
+import { MicroRenderFragment } from "./customElements.js";
 
 export function init(fragments, config) {
+  const initialRequest = Object.create(Request.prototype);
+  initialRequest._microrender = deserialise(document.querySelector("script#__microrender_initial-request").textContent);
+
   globalThis._microrender = {
     fragments,
     config,
-    fragmentCache: new Map
+    fragmentCache: new Map,
+    lastRequest: initialRequest
   };
 
   globalThis.microrender = {

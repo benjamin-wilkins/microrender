@@ -81,6 +81,8 @@ export default {
       };
     };
 
+    _microrender.lastRequest = request;
+
     try {
       await loadFragmentControl("root", request);
       await loadFragmentRender("root", document, request);

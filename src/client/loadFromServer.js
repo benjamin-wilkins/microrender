@@ -17,10 +17,10 @@ import { Interrupt } from "../common/error.js";
 import { getData } from "../common/helpers.js";
 
 function createRequest(fragment, request, hook, headers) {
-  const fragmentURL = new URL(request.url);
+  const fragmentURL = new URL(request._microrender.url);
   fragmentURL.pathname = `/_fragment/${fragment}/${hook}` + fragmentURL.pathname;
 
-  const fragmentHeaders = new Headers(request.headers);
+  const fragmentHeaders = new Headers;
   fragmentHeaders.set("MicroRender-Status", request._microrender.status.toString());
   fragmentHeaders.set("MicroRender-Title", request._microrender.title);
   fragmentHeaders.set("MicroRender-Description", request._microrender.description);
@@ -31,8 +31,7 @@ function createRequest(fragment, request, hook, headers) {
     };
   };
 
-  let fragmentRequest = new Request(fragmentURL, request);
-  fragmentRequest = new Request(fragmentRequest, {headers: fragmentHeaders, credentials: "include"});
+  const fragmentRequest = new Request(fragmentURL, {headers: fragmentHeaders, credentials: "include"});
 
   return fragmentRequest;
 };

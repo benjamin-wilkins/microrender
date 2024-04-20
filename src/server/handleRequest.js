@@ -94,6 +94,10 @@ export default {
         request._microrender.status = request.headers.get("MicroRender-Status");
         request._microrender.title = request.headers.get("MicroRender-Title");
         request._microrender.description = request.headers.get("MicroRender-Description");
+
+        const path = request._microrender.url.pathname.split("/");
+        path.splice(1, 2);
+        request._microrender.url.pathname = path.join("/");
       };
 
       if (request.method == "POST" && request.headers.get("content-type").includes("form")) {
@@ -110,18 +114,10 @@ export default {
           )
         );
       };
-
-      if (request._microrender.url.pathname.startsWith("/_fragment/")) {
-        const path = request._microrender.url.pathname.split("/");
-        path.splice(1, 2);
-        request._microrender.url.pathname = path.join("/");
-      };
     };
 
     const rewriter = new HTMLRewriter();
     rewriter.onDocument(finishingTouches);
-
-    console.log(JSON.stringify(request))
 
     try {
       if (url.pathname.startsWith("/_fragment/")) {

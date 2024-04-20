@@ -49,6 +49,9 @@ function addCommon($, request) {
     return fetch(resource, options);
   };
 
+  // To allow the microrender:js fragment to embed request info
+  $._request_microrender = request._microrender;
+
   if (request._microrender.formData) {
     $.form = (field) => {
       return request._microrender.formData.get(field);

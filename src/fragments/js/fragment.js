@@ -14,4 +14,12 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-// Do nothing for now
+import { serialise } from "../../common/helpers.js";
+
+async function serverRender ($) {
+  const requestData = serialise($._request_microrender).replace("</script", "</scr\\ipt");
+
+  $("script#__microrender_initial-request", (elmt) => {elmt.text(requestData)})
+};
+
+export const server = {render: serverRender};

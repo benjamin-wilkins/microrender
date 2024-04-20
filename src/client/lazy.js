@@ -39,7 +39,7 @@ export async function preLoadJS() {
   for (const fragment of _microrender.fragments.keys()) {
     if (currentFragments.has(fragment) && !_microrender.fragmentCache.has(fragment)) {
       // Add to cache
-      _microrender.fragmentCache.set(fragment, await _microrender.fragments.get(fragment)());
+      _microrender.fragments.get(fragment)().then(fragmentJS => _microrender.fragmentCache.set(fragment, fragmentJS));
     } else if (!currentFragments.has(fragment) && _microrender.fragmentCache.has(fragment)) {
       // Remove from cache
       _microrender.fragmentCache.delete(fragment);

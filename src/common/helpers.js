@@ -32,6 +32,8 @@ export function getData(attributes) {
 export function parseInterval(string) {
   // Convert an interval (eg. "1s", "300ms") to milliseconds.
 
+  if (typeof string != "string") return NaN;
+
   // Get the number part
   let ms = parseInt(string);
 
