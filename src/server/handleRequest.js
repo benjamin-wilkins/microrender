@@ -16,7 +16,7 @@
 
 import { ErrorCatcher } from "./handleError.js";
 import { control, render } from "./runjs.js";
-import { getData } from "../common/helpers.js";
+import { deserialise, getData, serialise } from "../common/helpers.js";
 
 const finishingTouches = {
   comments: async (comment) => {
@@ -82,37 +82,31 @@ export default {
     };
 
     if (!request._microrender) {
-      request._microrender = {
-        url: new URL(request.url),
-        status: 200,
-        title: "",
-        description: "",
-        cookies: new Map,
-      };
-
       if (url.pathname.startsWith("/_fragment/")) {
-        request._microrender.status = request.headers.get("MicroRender-Status");
-        request._microrender.title = request.headers.get("MicroRender-Title");
-        request._microrender.description = request.headers.get("MicroRender-Description");
+        request._microrender = deserialise(request.headers.get("MicroRender-Request"));
+      } else {
+        request._microrender = {
+          url: new URL(request.url),
+          status: 200,
+          title: "",
+          description: "",
+          cookies: new Map,
+        };
 
-        const path = request._microrender.url.pathname.split("/");
-        path.splice(1, 2);
-        request._microrender.url.pathname = path.join("/");
-      };
+        if (request.method == "POST" && request.headers.get("content-type").includes("form")) {
+          request._microrender.formData = await request.formData();
+        };
 
-      if (request.method == "POST" && request.headers.get("content-type").includes("form")) {
-        request._microrender.formData = await request.formData();
-      };
-
-      if (request.headers.get("Cookie")) {
-        request._microrender.cookies = new Map(
-          (request.headers.get("Cookie") || "")
-          .split(";")
-          .map(cookie => 
-            cookie.split("=")
-            .map(x => x.trim())
-          )
-        );
+        if (request.headers.get("Cookie")) {
+          request._microrender.cookies = new Map(
+            (request.headers.get("Cookie") || "")
+            .split(";")
+            .map(cookie => 
+              cookie.split("=")
+              .map(x => x.trim())
+            )
+          );
+        };
       };
     };
 
@@ -126,13 +120,9 @@ export default {
 
         if (hook == "control") {
           const headers = await loadFragmentControl(name, request, env, new Headers);
-          const response = new Response(null, {headers});
+          headers.set("MicroRender-Request", serialise(request._microrender));
 
-          response.headers.set("MicroRender-Status", request._microrender.status);
-          response.headers.set("MicroRender-Title", request._microrender.title);
-          response.headers.set("MicroRender-Description", request._microrender.description);
-
-          return response;
+          return new Response(null, {headers});
         } else if (hook == "render") {
           const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
           const response = await loadFragmentRender(name, request, env, data);
