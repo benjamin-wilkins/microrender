@@ -53,3 +53,97 @@ export function parseInterval(string) {
       return NaN;
   };
 };
+
+export function serialise(value) {
+  // Serialise a value so it can be sent over HTTP or inserted as text.
+  // Creates a JSON string that can be read by deserialise().
+
+  if (typeof value != "object" || value === null) {
+    // The value is a primitive, or null
+    return JSON.stringify(value);
+  } else if (typeof value[Symbol.iterator] == "function") {
+    // The value is an iterable
+
+    // Collect all values from iterable and serialise each individually
+    const items = [...value].map(serialise);
+
+    // Return serialised result as JSON with a descriptor so it can be deserialised properly
+    return `["Iterable", "${value.constructor.name}", [${items.join(", ")}]]`;
+  } else if (typeof value.toJSON != "undefined") {
+    // The value is an object with a .toJSON method
+    // Assume that the result of this can be passed to the constructor to deserialise
+
+    // Return serialised result as JSON with a descriptor so it can be deserialised properly
+    return `["ToJSON", "${value.constructor.name}", "${value.toJSON()}"]`;
+  } else {
+    // The value is another object
+
+    // Collect all enumerable own string keys and values and serialise each individually
+    // Does not serialise inherited keys, non-enumerable keys or symbol keys
+    const keys = [];
+
+    for (const [key, item] of Object.entries(value)) {
+      keys.push(`"${key}": ${serialise(item)}`);
+    };
+
+    // Return serialised result as JSON with a descriptor so it can be deserialised properly
+    return `["Object", "${value.constructor.name}", {${keys.join(", ")}}]`;
+  };
+};
+
+export function deserialise(string) {
+  // Deserialise a string created by serialise().
+
+  function load(value) {
+    // Take a descriptor or primitive and output the object or primitive it was serialised from.
+
+    if (value instanceof Array) {
+      // Value is a descriptor and needs converting to an object
+
+      // Extract data fron descriptor
+      const [method, prototype, data] = value;
+
+      if (method == "Iterable") {
+        // The object was an iterable
+
+        // Load the items
+        const items = data.map(load);
+
+        if (prototype == "Array") {
+          // It is already an array, so passing it to the array constructor will wrap it in another
+          // array when it should be returned as-is
+          return items;
+        } else {
+          // Create a new instance of the iterable using the array
+          // Assuming the iterable prototype/class is on the global object
+          return new globalThis[prototype](items);
+        };
+      } else if (method == "ToJSON") {
+        // The object has a .toJSON() method
+        // Assume that the result of this can be passed to the constructor to deserialise
+        return new globalThis[prototype](data);
+      } else if (method == "Object") {
+        // The object's keys were stored in the serialised JSON
+
+        // Create a new object
+        // Does not run the prototype's constructor
+        const object = Object.create(globalThis[prototype].prototype);
+
+        // Load and add the keys to the object
+        for (const key in data) {
+          object[key] = load(data[key]);
+        };
+
+        return object;
+      } else {
+        // This descriptor is invalid
+        throw new TypeError(`Unrecognised descriptor ${value}`);
+      };
+    } else {
+      // Value is a primitive and can be returned as-is
+      return value;
+    };
+  };
+
+  return load(JSON.parse(string));
+};
