@@ -29,7 +29,7 @@ These APIs can be accessed on the $ object passed to the `render` hook (export f
 fragment.
 
 | Syntax                                                                | Description                                                                               |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | `$(selector: string, callback: (elmt: Element) => void)` => `void`    | JQuery-like selector API. Runs `callback` for each matching element.                      |
 | `Element.getAttribute(attr)` => `string` \| `void`                    | Similar to DOM `Element.getAttribute()`                                                   |
 | `Element.hasAttribute(attr)` => `boolean`                             | Similar to DOM `Element.hasAttribute()`                                                   |
@@ -56,21 +56,21 @@ These APIs can be accessed on the $ object passed to the `control` hook (export 
 fragment. They cannot be used in the `render` hook as they modify HTTP headers on the server so must
 run before any of the body code. These (mostly) extend the global APIs.
 
-| Syntax                                                               | Description                                                                                |
-|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
-| `$.url(url: string \| URL)` => `void`                                | Changes the current URL.                                                                   |
-| `$.error(code: number)` => `void`                                    | Changes the current HTTP status.                                                           |
-| `$.cookie(name: string, value: string)` => ` void`                   | Sets browser cookies.                                                                      |
-| `$.title(title: string)` => `void`                                   | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.     |
-| `$.desc(desc: string)` => `void`                                     | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.     |
-| `$.pass(fragment: string)` => `Promise<void>`                        | Passes control to the `control` hook of another fragment.                                  |
+| Syntax                                                                | Description                                                                               |
+|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `$.url(url: string \| URL)` => `void`                                 | Changes the current URL.                                                                  |
+| `$.error(code: number)` => `void`                                     | Changes the current HTTP status.                                                          |
+| `$.cookie(name: string, value: string)` => ` void`                    | Sets browser cookies.                                                                     |
+| `$.title(title: string)` => `void`                                    | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.    |
+| `$.desc(desc: string)` => `void`                                      | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.    |
+| `$.pass(fragment: string)` => `Promise<void>`                         | Passes control to the `control` hook of another fragment.                                 |
 
 ## Additional Fragment APIs
 
 These are HTML and CSS APIs for defining and using fragments.
 
-| Syntax                                                     | Implemented? | Description                                                                               |
-|------------------------------------------------------------|--------------|-------------------------------------------------------------------------------------------|
+| Syntax                                                                | Description                                                                               |
+|-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | HTML `<microrender-fragment name="">`                                 | Embed another fragment within this fragment.                                              |
 | HTML `name="microrender:js"`                                          | Add the browser JS to the page.                                                           |
 | HTML `data-*=""`                                                      | Add parameters to a fragment. These can be accessed in the `render` hook using `$.data`.  |
