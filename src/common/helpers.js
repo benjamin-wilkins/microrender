@@ -33,6 +33,7 @@ export function parseInterval(string) {
   // Convert an interval (eg. "1s", "300ms") to milliseconds.
 
   if (typeof string != "string") return NaN;
+  string = string.trim();
 
   // Get the number part
   let ms = parseInt(string);
