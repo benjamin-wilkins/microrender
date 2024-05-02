@@ -168,6 +168,7 @@ async function buildJS(fragments) {
     minify: config.minify
   });
 
+/*
   await esbuild.build({
     entryPoints: [path.join(tmp_dir, "browser.js")],
     bundle: true,
@@ -177,6 +178,7 @@ async function buildJS(fragments) {
     splitting: true,
     minify: config.minify
   });
+*/
 };
 
 async function build() {
