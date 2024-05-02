@@ -15,16 +15,12 @@
 */
 
 async function control ($) {
-  const url = new URL($.url());
-
-  if ($.form || url.search) {
+  if ($.form || $.url().search) {
     $.title("Form Result");
   };
 };
 
 async function render ($) {
-  const url = new URL($.url());
-
   let form = false;
   let name;
   let method;
@@ -33,10 +29,9 @@ async function render ($) {
     form = true;
     name = $.form("name");
     method = "POST";
-
-  } else if (url.searchParams.has("name")) {
+  } else if ($.url().searchParams.has("name")) {
     form = true;
-    name = url.searchParams.get("name");
+    name = $.url().searchParams.get("name");
     method = "GET";
   };
 

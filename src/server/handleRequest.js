@@ -14,11 +14,14 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { ErrorCatcher } from "./handleError.js";
-import { control, render } from "./runjs.js";
-import { deserialise, getData, serialise } from "../common/helpers.js";
+import { HTTPError } from "../common/error.js";
+import { tryCatchAsync } from "../common/helpers.js";
+import { MicroRenderRequest } from "../common/request.js";
+import { FragmentRequest } from "./fragmentRequest.js";
 
 const finishingTouches = {
+  // Adds final modifiations before the HTML is streamed to the client.
+
   comments: async (comment) => {
     if (_microrender.config.stripComments) {
       comment.remove();
@@ -26,50 +29,26 @@ const finishingTouches = {
   }
 };
 
-async function loadFragmentRender(fragment, request, env, data) {
-  const fragmentJS = _microrender.fragments.get(fragment);
-  let fragmentHTML = await env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
+export class RequestHandler {
+  // Request handler that can be called by cloudflare pages.
 
-  if (fragmentJS) {
-    if (fragmentJS.render) {
-      fragmentHTML = await render(fragmentJS.render, fragmentHTML, request, env, data);
-    };
+  constructor(loader) {
+    this.loader = loader;
   };
 
-  fragmentHTML = await render(($) => {
-    $("microrender-fragment", async (elmt) => {
-      const name = elmt.attr("name");
-      const data = getData(elmt.rewriterElement.attributes);
+  async fetch(jsRequest, env) {
+    // Handle incoming HTTP requests.
 
-      let newFragment = await loadFragmentRender(name, request, env, data);
-      newFragment = await newFragment.text();
-      elmt.html(newFragment);
-    })
-  }, fragmentHTML, request, env, data);
+    const url = new URL(jsRequest.url);
 
-  return fragmentHTML;
-};
-
-async function loadFragmentControl(fragment, request, env, headers) {
-  const fragmentJS = _microrender.fragments.get(fragment);
-
-  if (fragmentJS) {
-    if (fragmentJS.control) {
-      await control(fragmentJS.control, request, env, headers);
-    };
-  };
-
-  return headers;
-};
-
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-
+    // Pass through asset URLs
     if (url.pathname.startsWith("/assets/")) {
-      return env.ASSETS.fetch(request);
-    } else if (url.pathname.startsWith("/_binding/")) {
-      const newRequest = new Request(url.searchParams.get("url"), request);
+      return env.ASSETS.fetch(jsRequest);
+    };
+    
+    // Pass binding URLs to the service binding
+    if (url.pathname.startsWith("/_binding/")) {
+      const newRequest = new Request(url.searchParams.get("url"), jsRequest);
       let binding;
 
       try {
@@ -81,68 +60,31 @@ export default {
       return binding.fetch(newRequest);
     };
 
-    if (!request._microrender) {
-      if (url.pathname.startsWith("/_fragment/")) {
-        request._microrender = deserialise(request.headers.get("MicroRender-Request"));
-      } else {
-        request._microrender = {
-          url: new URL(request.url),
-          status: 200,
-          title: "",
-          description: "",
-          cookies: new Map,
-        };
-
-        if (request.method == "POST" && request.headers.get("content-type").includes("form")) {
-          request._microrender.formData = await request.formData();
-        };
-
-        if (request.headers.get("Cookie")) {
-          request._microrender.cookies = new Map(
-            (request.headers.get("Cookie") || "")
-            .split(";")
-            .map(cookie => 
-              cookie.split("=")
-              .map(x => x.trim())
-            )
-          );
-        };
-      };
+    // Create a MicroRenderRequest or FragmentRequest object and pass it to handleRequest
+    let request;
+    
+    if (url.pathname.startsWith("/_fragment/")) {
+      // The client is requesting a single fragment as part of a larger request
+      request = await FragmentRequest.read(jsRequest, {env});
+    } else {
+      // This is an ordinary request
+      request = await MicroRenderRequest.read(jsRequest, {env});
     };
 
+    // Create an HTMLRewriter object to add finishing touches
     const rewriter = new HTMLRewriter();
     rewriter.onDocument(finishingTouches);
 
-    try {
-      if (url.pathname.startsWith("/_fragment/")) {
-        const name = url.pathname.split("/")[2];
-        const hook = url.pathname.split("/")[3];
-
-        if (hook == "control") {
-          const headers = await loadFragmentControl(name, request, env, new Headers);
-          headers.set("MicroRender-Request", serialise(request._microrender));
-
-          return new Response(null, {headers});
-        } else if (hook == "render") {
-          const data = new Map(JSON.parse(request.headers.get("MicroRender-Data")));
-          const response = await loadFragmentRender(name, request, env, data);
-          return rewriter.transform(response);
-        } else {
-          throw new Error(`Unrecognised hook ${hook}`);
-        };
-      };
-
-      const headers = await loadFragmentControl("root", request, env, new Headers);
-      const response = await loadFragmentRender("root", request, env, new Map);
-
-      for (const [header, value] of headers.entries()) {
-        response.headers.append(header, value);
-      };
-
-      return rewriter.transform(response);
-    } catch (e) {
-      const errorCatcher = new ErrorCatcher(request, url, env);
-      return errorCatcher.catch(e);
-    };
-  }
+    return rewriter.transform(
+      await tryCatchAsync(
+        // Pass control to the request to handle itself and add finishing touches
+        () => request.handle(this.loader),
+        // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
+        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.loader, request)
+      ).catch(
+        // Retry limit exceeded
+        () => new Response("500 Internal Server Error", {status: 500})
+      )
+    );
+  };
 };

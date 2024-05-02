@@ -14,9 +14,28 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export class Interrupt extends Error {
-  constructor(name, cause) {
-    super("", {cause: cause});
-    this.name = name;
+export class Redirect extends Error {
+  constructor(redirect) {
+    super();
+    this.redirect = redirect;
   };
+
+  catch = (loader, request) => {
+    return request.redirect(loader, this.redirect);
+  };
+
+  name = "Response";
+};
+
+export class HTTPError extends Error {
+  constructor(status) {
+    super();
+    this.status = status;
+  };
+
+  catch = (loader, request) => {
+    return request.error(loader, this.status);
+  };
+
+  name = "HTTPError";
 };

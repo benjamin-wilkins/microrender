@@ -14,14 +14,22 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { Interrupt } from "../common/error.js";
+import { Redirect, HTTPError } from "../common/error.js";
 import { ElementHandler } from "./element.js";
 
-function addCommon($, request, env) {
+function addCommon($, request, loader) {
+  // Global MicroRender APIs common to all hooks.
+
   $.fetch = (resource, options) => {
+    // Custom fetcher - supports binding: urls.
+
+    // Get the URL from the resource
     const url = new URL(resource instanceof Request ? resource.url : resource.toString(), request.url);
 
     if (url.protocol == "binding:") {
+      // Run the binding using service bindings
+
+      // Get the binding info
       const binding = url.pathname.split("/")[0];
       const path = url.pathname.split("/").slice(1);
 
@@ -29,6 +37,7 @@ function addCommon($, request, env) {
         throw new TypeError("Unrecognised binding");
       };
 
+      // Build the new URL for the binding
       const newUrl = new URL(`https://${binding}`);
       newUrl.pathname = path;
       newUrl.query = url.query;
@@ -40,125 +49,178 @@ function addCommon($, request, env) {
         resource = newUrl;
       };
 
-      return env[binding].fetch(resource);
+      // Fetch using the binding
+      return request.env[binding].fetch(resource);
     };
+
+    // Just a normal fetch request
     return fetch(resource, options);
   };
 
   // To allow the microrender:js fragment to embed request info
-  $._request_microrender = request._microrender;
+  $._request = request;
 
-  if (request._microrender.formData) {
+  if (request.formData) {
+    // Only create $.form if it is a form POST request
     $.form = (field) => {
-      return request._microrender.formData.get(field);
+      return request.formData.get(field);
     };
   };
 };
 
-export async function control(fn, request, env, headers) {
-  const $ = Object.create(null);
-  addCommon($, request, env);
+export async function control(fn, request, loader, headers) {
+  // Run the control hook.
 
-  $.url = (newURL, status) => {
-    if (typeof newURL != "undefined") {
-      if (typeof newURL == "string") {
-        newURL = new URL(newURL, request._microrender.url);
+  // $ is not callable
+  const $ = Object.create(null);
+
+  // Add common APIs
+  addCommon($, request, loader);
+
+  $.url = (newUrl, status) => {
+    // URL API that supports read and write (redirecting).
+
+    if (typeof newUrl != "undefined") {
+      // Redirecting
+      if (typeof newUrl == "string") {
+        // Convert newUrl to a URL object
+        newUrl = new URL(newUrl, request.url);
       };
-      throw new Interrupt("redirectResponse", Response.redirect(newURL, status));
+
+      // Interrupt main flow
+      throw new Redirect(Response.redirect(newUrl, status));
     };
 
-    return request._microrender.url;
+    return request.url;
   };
 
   $.error = (code) => {
+    // Return / get HTTP error codes eg. 404.
+
     if (typeof code != "undefined") {
-      throw new Interrupt("errorCode", code)
+      // Interrupt main flow
+      throw new HTTPError(code);
     };
 
-    return request._microrender.status;
+    return request.status;
   };
 
   $.cookie = (name, value, options) => {
-    options = options || Object.create(null);
-    options.path = "/";
+    // Read / write cookies.
 
     if (typeof value != "undefined") {
+      // Writing a cookie
+
+      // Ensure options.path is `/` so cookies can always be found
+      options = options || Object.create(null);
+      options.path = "/";
+
+      // Serialise cookie into `Set-Cookie` header
       const optionString = Object.entries(options).map(option => option.join("=")).join("; ");
       headers.append("Set-Cookie", `${encodeURIComponent(name)}=${encodeURIComponent(value)}; ${optionString}`);
 
-      request._microrender.cookies.set(name, value);
+      // Set the cookie in the cookie Map so it can be accessed by other fragments without needing to decode
+      // headers
+      request.cookies.set(name, value);
       return;
     };
 
-    return request._microrender.cookies.get(name);
+    return request.cookies.get(name);
   };
 
   $.title = (title) => {
+    // Read / write the title.
+    // This doesn't actually modify the response but allows the title to be set for the render hook on the
+    // <title> element and elsewhere.
+
     if (typeof title != "undefined") {
-      request._microrender.title = title;
+      request.title = title;
       return;
     };
 
-    return request._microrender.title;
+    return request.title;
   };
 
   $.desc = (desc) => {
+    // Read / write the description.
+    // This doesn't actually modify the response but allows the title to be set for the render hook on the
+    // <meta> element or elsewhere.
+
     if (typeof desc != "undefined") {
-      request._microrender.description = desc;
+      request.description = desc;
       return;
     };
 
-    return request._microrender.description;
+    return request.description;
   };
 
   $.pass = async (fragment) => {
-    const fragmentJS = _microrender.fragments.get(fragment);
+    // Run another fragment's control hook.
 
-    if (fragmentJS) {
-      if (fragmentJS.control) {
-        return control(fragmentJS.control, request, env, headers);
-      };
-    };
+    await loader.control(fragment, request, {headers});
   };
 
+  // Run the control hook
   await fn($);
 };
 
-export async function render(fn, fragmentHTML, request, env, data) {
+export async function render(fn, request, loader, response, data) {
+  // Run the render hook.
+
+  // Create an HTMLRewriter object to modify the response
   const rewriter = new HTMLRewriter();
 
   const $ = (selector, callback) => {
+    // JQuery-like selector function. Runs callback for every element that matches the selector.
+
+    // Create an ElementHandler and add it to the rewriter
     const handler = new ElementHandler(callback);
     rewriter.on(selector, handler);
   };
 
-  addCommon($, request, env);
+  // Add common APIs
+  addCommon($, request, loader);
 
   $.url = () => {
-    return request._microrender.url;
+    // Read the url.
+
+    return request.url;
   };
 
   $.error = () => {
-    return request._microrender.status;
+    // Read the HTTP status code.
+
+    return request.status;
   };
 
   $.cookie = (name) => {
-    return request._microrender.cookies.get(name);
+    // Read a cookie.
+
+    return request.cookies.get(name);
   };
 
   $.title = () => {
-    return request._microrender.title;
+    // Get the page title.
+
+    return request.title;
   };
 
   $.desc = () => {
-    return request._microrender.description;
+    // Get the page description.
+
+    return request.description;
   };
 
   $.data = (attr) => {
+    // Get data-* attributes set on the fragment element. `foo` is automatically transformed to
+    // `data-foo`: the `data-` is not required.
+
     return data.get(attr);
   };
   
+  // Run the render hook
   await fn($);
 
-  return rewriter.transform(fragmentHTML);
+  // Stream the HTML
+  return rewriter.transform(response);
 };

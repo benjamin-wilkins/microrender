@@ -57,9 +57,25 @@ export function parseInterval(string) {
   };
 };
 
-export function serialise(value) {
+export function serialise(value, locals={}) {
   // Serialise a value so it can be sent over HTTP or inserted as text.
   // Creates a JSON string that can be read by deserialise().
+
+  // The constructor of each object to be serialised should either be in `globalThis` and have a matching
+  // `name` property to its key or be in `locals`. Either way, the constructor should be accessible to
+  // both `serialise()` and `deserialise()`.
+
+  function getConstructorName(object) {
+    // Get the name of an object's constructor. Uses its property key in `locals` or `name` otherwise (it
+    // would be inefficient to search through `globalThis` for the key).
+
+    return (
+      Object.entries(locals)
+        .find(item => item[1] === object.constructor)
+        ?.[1]
+      || object.constructor.name
+    );
+  };
 
   if (typeof value != "object" || value === null) {
     // The value is a primitive, or null
@@ -68,16 +84,16 @@ export function serialise(value) {
     // The value is an iterable
 
     // Collect all values from iterable and serialise each individually
-    const items = [...value].map(serialise);
+    const items = [...value].map((value) => serialise(value));
 
     // Return serialised result as JSON with a descriptor so it can be deserialised properly
-    return `["Iterable", "${value.constructor.name}", [${items.join(", ")}]]`;
+    return `["Iterable", "${getConstructorName(value)}", [${items.join(", ")}]]`;
   } else if (typeof value.toJSON != "undefined") {
     // The value is an object with a .toJSON method
     // Assume that the result of this can be passed to the constructor to deserialise
 
     // Return serialised result as JSON with a descriptor so it can be deserialised properly
-    return `["ToJSON", "${value.constructor.name}", "${value.toJSON()}"]`;
+    return `["ToJSON", "${getConstructorName(value)}", "${value.toJSON()}"]`;
   } else {
     // The value is another object
 
@@ -90,12 +106,16 @@ export function serialise(value) {
     };
 
     // Return serialised result as JSON with a descriptor so it can be deserialised properly
-    return `["Object", "${value.constructor.name}", {${keys.join(", ")}}]`;
+    return `["Object", "${getConstructorName(value)}", {${keys.join(", ")}}]`;
   };
 };
 
-export function deserialise(string) {
+export function deserialise(string, locals={}) {
   // Deserialise a string created by serialise().
+
+  function getConstuctor(name) {
+    return (locals[name] || globalThis[name]).prototype;
+  };
 
   function load(value) {
     // Take a descriptor or primitive and output the object or primitive it was serialised from.
@@ -104,7 +124,7 @@ export function deserialise(string) {
       // Value is a descriptor and needs converting to an object
 
       // Extract data fron descriptor
-      const [method, prototype, data] = value;
+      const [method, constructor, data] = value;
 
       if (method == "Iterable") {
         // The object was an iterable
@@ -118,19 +138,18 @@ export function deserialise(string) {
           return items;
         } else {
           // Create a new instance of the iterable using the array
-          // Assuming the iterable prototype/class is on the global object
-          return new globalThis[prototype](items);
+          return new getConstuctor(constructor)(items);
         };
       } else if (method == "ToJSON") {
         // The object has a .toJSON() method
         // Assume that the result of this can be passed to the constructor to deserialise
-        return new globalThis[prototype](data);
+        return new getConstuctor(constructor)(data);
       } else if (method == "Object") {
         // The object's keys were stored in the serialised JSON
 
         // Create a new object
         // Does not run the prototype's constructor
-        const object = Object.create(globalThis[prototype].prototype);
+        const object = Object.create(getConstuctor(constructor).prototype);
 
         // Load and add the keys to the object
         for (const key in data) {
@@ -149,4 +168,44 @@ export function deserialise(string) {
   };
 
   return load(JSON.parse(string));
+};
+
+export function tryCatch(tryFn, catchFn, {retries=5}={}) {
+  // Try running tryFn, but if an error is thrown recursively call catchFn until an error
+  // is not thrown.
+  // tryFn and catchFn should have the same return type.
+
+  // Prevent recursive errors
+  retries -= 1;
+
+  try {
+    // Try running tryFn
+    return tryFn();
+  } catch (e) {
+    // Rethrow the error if reached retry limit
+    if (retries == 0) throw e;
+
+    // Call catchFn with e as an argument inside another tryCatch.
+    return tryCatch(() => catchFn(e), catchFn, {retries});
+  };
+};
+
+export async function tryCatchAsync(tryFn, catchFn, {retries=5}={}) {
+  // Try running and awaiting tryFn, but if an error is thrown recursively call catchFn until an error
+  // is not thrown.
+  // tryFn and catchFn should have the same return type.
+
+  // Prevent recursive errors
+  retries -= 1;
+
+  try {
+    // Try running tryFn
+    return await tryFn();
+  } catch (e) {
+    // Rethrow the error if reached retry limit
+    if (retries == 0) throw e;
+    
+    // Call catchFn with e as an argument inside another tryCatch.
+    return await tryCatchAsync(() => catchFn(e), catchFn, {retries});
+  };
 };

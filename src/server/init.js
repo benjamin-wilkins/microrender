@@ -14,13 +14,22 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import handleRequest from "./handleRequest.js";
+import { RequestHandler } from "./handleRequest.js";
+import { Loader } from "./loader.js";
+import * as runtime from "./runjs.js";
 
 export function init(fragments, config) {
   globalThis._microrender = {
-    fragments,
     config
   };
 
-  return handleRequest;
+  const loader = new Loader(runtime, fragments);
+  const requestHandler = new RequestHandler(loader);
+
+  // NOTE: cloudflare workers does not currently search the prototype chain for request handlers, so
+  // it's necessary wrap it. This issue is being tracked by cloudflare - when this is fixed the
+  // following line should be removed.
+  requestHandler.fetch = requestHandler.fetch;
+
+  return requestHandler;
 };
