@@ -29,6 +29,16 @@ export function getData(attributes) {
   return data;
 };
 
+export function getCookieString(name, value, options={}) {
+  // Serialise a cookie.
+
+  const optionString = Object.entries(options)
+    .map(option => option.join("="))
+    .join("; ");
+  
+  return `${encodeURIComponent(name)}=${encodeURIComponent(value)}; ${optionString}`;
+};
+
 export function parseInterval(string) {
   // Convert an interval (eg. "1s", "300ms") to milliseconds.
 
@@ -208,4 +218,31 @@ export async function tryCatchAsync(tryFn, catchFn, {retries=5}={}) {
     // Call catchFn with e as an argument inside another tryCatch.
     return await tryCatchAsync(() => catchFn(e), catchFn, {retries});
   };
+};
+
+export class ExtendableFunction extends Function {
+  // Function object that supports inheritance.
+
+  // Javascript doesn't properly allow a function to be extended normally as the `Function` constructor
+  // takes a string of code as an argument. like `eval()`, this may be bad for security and is not
+  // allowed by some runtimes.
+
+  // To allow a class to extend `Function`, ExtendableFunction modifies the prototype chain on an
+  // anomynous function to be:
+  // fn -> functionClass.prototype -> ExtendableFunction.prototype -> Function.prototype
+  // instead of:
+  // fn -> Function.prototype
+
+  // fn calls `_call()` on the class. This function should be overwritten by a subclass.
+
+  constructor() {
+    // Wrap `_call` to maintain a `this` binding
+    const fn = (...args) => fn._call.apply(fn, args);
+
+    // Modify the prototype chain to add properties from the class prototype
+    return Object.setPrototypeOf(fn, new.target.prototype);
+  };
+
+  // Override
+  _call() {};
 };

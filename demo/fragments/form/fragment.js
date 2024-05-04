@@ -15,7 +15,7 @@
 */
 
 async function control ($) {
-  if ($.form || $.url().search) {
+  if ($.form() || $.url().search) {
     $.title("Form Result");
   };
 };
@@ -25,7 +25,7 @@ async function render ($) {
   let name;
   let method;
 
-  if ($.form && $.form("name")) {
+  if ($.form("name")) {
     form = true;
     name = $.form("name");
     method = "POST";

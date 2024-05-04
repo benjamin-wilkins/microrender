@@ -45,6 +45,7 @@ export class MicroRenderRequest {
             .map(x => x.trim())
         )
       ) : new Map;
+      console.log(this.cookies)
   };
 
   static async read(jsRequest, options) {

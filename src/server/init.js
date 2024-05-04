@@ -16,13 +16,14 @@
 
 import { RequestHandler } from "./handleRequest.js";
 import { Loader } from "./loader.js";
-import * as runtime from "./runjs.js";
+import { Runtime } from "./runtime.js";
 
 export function init(fragments, config) {
   globalThis._microrender = {
     config
   };
 
+  const runtime = new Runtime;
   const loader = new Loader(runtime, fragments);
   const requestHandler = new RequestHandler(loader);
 
