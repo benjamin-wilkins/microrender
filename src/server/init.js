@@ -19,13 +19,9 @@ import { Loader } from "./loader.js";
 import { Runtime } from "./runtime.js";
 
 export function init(fragments, config) {
-  globalThis._microrender = {
-    config
-  };
-
-  const runtime = new Runtime;
-  const loader = new Loader(runtime, fragments);
-  const requestHandler = new RequestHandler(loader);
+  const runtime = new Runtime(config);
+  const loader = new Loader(runtime, fragments, config);
+  const requestHandler = new RequestHandler(loader, config);
 
   // NOTE: cloudflare workers does not currently search the prototype chain for request handlers, so
   // it's necessary wrap it. This issue is being tracked by cloudflare - when this is fixed the

@@ -21,10 +21,13 @@ import { ExtendableFunction, getCookieString } from "../common/helpers.js";
 class Base$ extends ExtendableFunction {
   // Global MicroRender APIs common to all hooks.
 
-  constructor(request, loader) {
+  constructor(request, loader, config) {
     super();
+
+    // Use _ for internal properties as $ gets passed to user code
     this._request = request;
     this._loader = loader;
+    this._config = config;
   };
 
   _call() {
@@ -44,7 +47,7 @@ class Base$ extends ExtendableFunction {
       const binding = url.pathname.split("/")[0];
       const path = url.pathname.split("/").slice(1);
 
-      if (!_microrender.config.bindings.includes(binding)) {
+      if (!this._config.bindings.includes(binding)) {
         throw new TypeError("Unrecognised binding");
       };
 
@@ -114,9 +117,10 @@ class Base$ extends ExtendableFunction {
 class Control$ extends Base$ {
   // MicroRender control APIs
 
-  constructor(request, loader, headers) {
-    super(request, loader);
+  constructor(request, loader, config, headers) {
+    super(request, loader, config);
     this._headers = headers;
+    this._config = config;
   };
 
   url(newUrl, status=302) {
@@ -198,8 +202,8 @@ class Control$ extends Base$ {
 class Render$ extends Base$ {
   // MicroRender render APIs
 
-  constructor(request, loader, data) {
-    super(request, loader);
+  constructor(request, loader, config, data) {
+    super(request, loader, config);
     this._data = data;
     this._rewriter = new HTMLRewriter;
   };
@@ -221,11 +225,15 @@ class Render$ extends Base$ {
 };
 
 export class Runtime {
+  constructor(config) {
+    this.config = config;
+  }
+
   async control(fn, request, loader, headers) {
     // Run the control hook.
 
     // Generate APIs
-    const $ = new Control$(request, loader, headers);
+    const $ = new Control$(request, loader, this.config, headers);
 
     // Run the JS
     await fn($);
@@ -235,7 +243,7 @@ export class Runtime {
     // Run the render hook.
 
     // Generate APIs
-    const $ = new Render$(request, loader, data);
+    const $ = new Render$(request, loader, this.config, data);
 
     // Run the JS
     await fn($);

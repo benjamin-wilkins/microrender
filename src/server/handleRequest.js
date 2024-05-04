@@ -19,21 +19,28 @@ import { tryCatchAsync } from "../common/helpers.js";
 import { MicroRenderRequest } from "../common/request.js";
 import { FragmentRequest } from "./fragmentRequest.js";
 
-const finishingTouches = {
+class FinishingTouches {
   // Adds final modifiations before the HTML is streamed to the client.
+  constructor(config) {
+    this.config = config;
+  }
 
-  comments: async (comment) => {
-    if (_microrender.config.stripComments) {
+  async comments (comment) {
+    if (this.config.stripComments) {
       comment.remove();
     };
-  }
+  };
 };
 
 export class RequestHandler {
   // Request handler that can be called by cloudflare pages.
 
-  constructor(loader) {
+  constructor(loader, config) {
     this.loader = loader;
+    this.config = config;
+
+    // Initialise finishing touches
+    this.finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches(config));
   };
 
   async fetch(jsRequest, env) {
@@ -71,11 +78,7 @@ export class RequestHandler {
       request = await MicroRenderRequest.read(jsRequest, {env});
     };
 
-    // Create an HTMLRewriter object to add finishing touches
-    const rewriter = new HTMLRewriter();
-    rewriter.onDocument(finishingTouches);
-
-    return rewriter.transform(
+    return this.finishingTouches.transform(
       await tryCatchAsync(
         // Pass control to the request to handle itself and add finishing touches
         () => request.handle(this.loader),
