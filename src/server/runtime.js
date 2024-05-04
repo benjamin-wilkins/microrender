@@ -23,7 +23,6 @@ class Base$ extends ExtendableFunction {
 
   constructor(request, loader) {
     super();
-    this.bind(this);
     this._request = request;
     this._loader = loader;
   };
@@ -124,6 +123,9 @@ class Control$ extends Base$ {
     // Get / set (redirect) the URL.
 
     if (typeof newUrl != "undefined") {
+      // Get full URL using URL API
+      newUrl = new URL(newUrl, this._request.url);
+
       // Redirect the user
       throw new Redirect(Response.redirect(newUrl, status));
     };
