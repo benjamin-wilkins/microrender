@@ -31,11 +31,10 @@ export class Loader {
     // Get the fragment JS
     const fragmentJS = this.fragments.get(fragment);
     
-    if (fragmentJS) {
-      if (fragmentJS.control) {
-        // Run the control hook
-        await this.runtime.control(fragmentJS.control, request, this, headers);
-      };
+
+    if (fragmentJS?.control) {
+      // Run the control hook
+      await this.runtime.control(fragmentJS.control, request, this, {headers});
     };
   
     return headers;
@@ -50,11 +49,9 @@ export class Loader {
     // Get the fragment HTML from cloudflare pages
     let response = await request.env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
-    if (fragmentJS) {
-      if (fragmentJS.render) {
-        // Run the render hook
-        response = await this.runtime.render(fragmentJS.render, request, this, response, data);
-      };
+    if (fragmentJS.render) {
+      // Run the render hook
+      response = await this.runtime.render(fragmentJS.render, request, this, data, {response});
     };
 
     // Load child fragments
@@ -73,7 +70,7 @@ export class Loader {
         newFragment = await newFragment.text();
         elmt.html(newFragment);
       })
-    }, request, this, response, data);
+    }, request, this, data, {response});
 
     for (const [header, value] of headers) {
       response.headers.set(header, value);

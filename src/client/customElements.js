@@ -15,57 +15,87 @@
 */
 
 import { parseInterval } from "../common/helpers";
-import { loadFragmentRender } from "./handleRequest";
 
-export class MicroRenderFragment extends HTMLElement {
-  static observedAttributes = ["name", "microrender-timeout"];
+export function MicroRenderFragment(requestHandler) {
+  // Wrapper function to allow the requestHandler to be passed as an argument.
 
-  constructor() {
-    super();
-    this.internals_ = this.attachInternals();
-  };
+  return class MicroRenderFragment extends HTMLElement {
+    // `microrender-fragment` custom element.
 
-  attributeChangedCallback(name, oldValue, newValue) {
-    switch (name) {
-      case "name":
-        if (oldValue != newValue && oldValue) {
-          this.requiresFetch = true;
-        };
-        break
-      case "microrender-timeout":
-        const oldInterval = parseInterval(oldValue);
-        const newInterval = parseInterval(newValue);
-        
-        if (oldInterval != newInterval) {
-          if (this.interval_) clearInterval(this.interval_);
-          this.interval_ = setInterval(
-            () => loadFragmentRender(this.getAttribute("name"), this, _microrender.lastRequest),
-            parseInterval(this.getAttribute("microrender-timeout"))
-          );
-        };
+    // Call `attributeChangedCallback` if an observed attribute changes
+    static observedAttributes = ["name", "microrender-timeout"];
+
+    constructor() {
+      super();
+      this._internals = this.attachInternals();
     };
-  };
 
-  get requiresFetch() {
-    if (this.internals_.states) {
-      return this.internals_.states.has("--requires-fetch");
-    } else {
-      return this.classList.contains("state--requires-fetch");
-    };
-  };
+    attributeChangedCallback(name, oldValue, newValue) {
+      // Update the fragment.
 
-  set requiresFetch(flag) {
-    if (flag) {
-      if (this.internals_.states) {
-        this.internals_.states.add("--requires-fetch");
-      } else {
-        this.classList.add("state--requires-fetch");
+      switch (name) {
+        case "name":
+          // A new fragment needs to be loaded
+
+          // Don't reload unless necessary, and don't call when the DOM loads
+          if (oldValue != newValue && oldValue) {
+            this.requiresFetch = true;
+          };
+
+          break
+        case "microrender-timeout":
+          // A timeout has been added, removed or updated
+
+          // Calculate interval duration in ms
+          const oldInterval = parseInterval(oldValue);
+          const newInterval = parseInterval(newValue);
+          
+          // Don't update unless necessary, but still call when the DOM loads
+          if (oldInterval != newInterval) {
+
+            // Remove old interval
+            if (this.interval_) clearInterval(this.interval_);
+
+            // Add new interval
+            this.interval_ = setInterval(
+              () => requestHandler.update(this.getAttribute("name"), this),
+              parseInterval(this.getAttribute("microrender-timeout"))
+            );
+          };
       };
-    } else {
-      if (this.internals_.states) {
-        this.internals_.states.delete("--requires-fetch");
+    };
+
+    get requiresFetch() {
+      // Get whether the fragment needs refetching based on the element `:state` or CSS class if
+      // `:state` is unavailable.
+
+      if (this._internals.states) {
+        return this._internals.states.has("--requires-fetch");
       } else {
-        this.classList.remove("state--requires-fetch");
+        return this.classList.contains("state--requires-fetch");
+      };
+    };
+
+    set requiresFetch(flag) {
+      // Set whether the fragment needs refetching.
+      // If `:state` is availible, adds a `--requires-fetch` state.
+      // If it is unavailable, adds a `state--requires-fetch` CSS class.
+
+      // To select all fragments that need refetching, use the selector:
+      // `microrender-fragment:where(:state(--requires-fetch), .state--requires-fetch)`
+
+      if (flag) {
+        if (this._internals.states) {
+          this._internals.states.add("--requires-fetch");
+        } else {
+          this.classList.add("state--requires-fetch");
+        };
+      } else {
+        if (this._internals.states) {
+          this._internals.states.delete("--requires-fetch");
+        } else {
+          this.classList.remove("state--requires-fetch");
+        };
       };
     };
   };

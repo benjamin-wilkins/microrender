@@ -19,6 +19,9 @@ import { Loader } from "./loader.js";
 import { Runtime } from "./runtime.js";
 
 export function init(fragments, config) {
+  // Initialise the MicroRender server on Cloudflare Pages.
+
+  // Initialise each component
   const runtime = new Runtime(config);
   const loader = new Loader(runtime, fragments, config);
   const requestHandler = new RequestHandler(loader, config);
@@ -28,5 +31,6 @@ export function init(fragments, config) {
   // following line should be removed.
   requestHandler.fetch = requestHandler.fetch;
 
+  // Can be called by cloudflare pages
   return requestHandler;
 };

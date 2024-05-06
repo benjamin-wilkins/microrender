@@ -82,7 +82,7 @@ export function serialise(value, locals={}) {
     return (
       Object.entries(locals)
         .find(item => item[1] === object.constructor)
-        ?.[1]
+        ?.[0]
       || object.constructor.name
     );
   };
@@ -123,8 +123,8 @@ export function serialise(value, locals={}) {
 export function deserialise(string, locals={}) {
   // Deserialise a string created by serialise().
 
-  function getConstuctor(name) {
-    return (locals[name] || globalThis[name]).prototype;
+  function getConstructor(name) {
+    return locals[name] || globalThis[name];
   };
 
   function load(value) {
@@ -142,24 +142,24 @@ export function deserialise(string, locals={}) {
         // Load the items
         const items = data.map(load);
 
-        if (prototype == "Array") {
+        if (constructor == "Array") {
           // It is already an array, so passing it to the array constructor will wrap it in another
           // array when it should be returned as-is
           return items;
         } else {
           // Create a new instance of the iterable using the array
-          return new getConstuctor(constructor)(items);
+          return new (getConstructor(constructor))(items);
         };
       } else if (method == "ToJSON") {
         // The object has a .toJSON() method
         // Assume that the result of this can be passed to the constructor to deserialise
-        return new getConstuctor(constructor)(data);
+        return new (getConstructor(constructor))(data);
       } else if (method == "Object") {
         // The object's keys were stored in the serialised JSON
 
         // Create a new object
         // Does not run the prototype's constructor
-        const object = Object.create(getConstuctor(constructor).prototype);
+        const object = Object.create(getConstructor(constructor).prototype);
 
         // Load and add the keys to the object
         for (const key in data) {

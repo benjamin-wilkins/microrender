@@ -67,7 +67,7 @@ export class RequestHandler {
       return binding.fetch(newRequest);
     };
 
-    // Create a MicroRenderRequest or FragmentRequest object and pass it to handleRequest
+    // Create a MicroRenderRequest or FragmentRequest object and call its handler
     let request;
     
     if (url.pathname.startsWith("/_fragment/")) {
@@ -80,7 +80,7 @@ export class RequestHandler {
 
     return this.finishingTouches.transform(
       await tryCatchAsync(
-        // Pass control to the request to handle itself and add finishing touches
+        // Pass control to the request to handle itself
         () => request.handle(this.loader),
         // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
         (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.loader, request)

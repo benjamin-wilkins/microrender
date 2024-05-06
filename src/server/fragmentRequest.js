@@ -15,14 +15,13 @@
 */
 
 import { MicroRenderRequest } from "../common/request.js";
-import { deserialise } from "../common/helpers.js";
 
 export class FragmentRequest {
   // Internal representation of a `/_fragment/` request. Represents one step of a MicroRenderRequest
   // and extends its interface with fragment-specific properties like `fragment` and `hook`. In most
   // cases a FragmentRequest should be treated exactly the same as a MicroRenderRequest object.
 
-  constructor(request, httpUrl, {env=null, formData=null}={}) {
+  constructor(request, httpUrl, {env=null, data=null}={}) {
     // The underlying MicroRenderRequest for this FragmentRequest
     this.request = request;
 
@@ -33,26 +32,31 @@ export class FragmentRequest {
     this.fragment = httpUrl.pathname.split("/")[2];
     this.hook = httpUrl.pathname.split("/")[3];
 
-    // Include `formData` as an object as opposed to an async function
-    this.formData = formData;
+    // The `data-*` attributes for the fragment being requested
+    this.data = data;
 
-    // Ensure `env` is non-enumerable so it is not serialised
+    // Ensure `env` is non-enumerable as it is platform-dependent
     Object.defineProperty(this, "env", {value: env});
   };
 
-  static async read(jsRequest, {env=null, formData=null}={}) {
+  static async read(jsRequest, {env=null}={}) {
     // Create a FragmentRequest object from a JS Request object.
 
     // Deserialise the underlying MicroRenderRequest object from the `MicroRender-Request` HTTP header.
-    const request = deserialise(jsRequest.headers.get("MicroRender-Request"), {MicroRenderRequest});
+    const request = MicroRenderRequest.deserialise(jsRequest.headers.get("MicroRender-Request"));
+
+    // Add the formData to the request from the fragment request body
+    if (jsRequest.method == "POST") {
+      request.formData = await jsRequest.formData();
+    };
 
     // Deserialise the fragment element's `data-*` attributes (if they exist)
     const data = jsRequest.headers.has("MicroRender-Data")
       ? new Map(JSON.parse(jsRequest.headers.get("")))
-      : undefined;
+      : null;
 
     // Create a FragmentRequest object
-    return new FragmentRequest(request, jsRequest.url, {data, env, formData});
+    return new FragmentRequest(request, jsRequest.url, {data, env});
   };
 
   serialise() {
@@ -74,15 +78,15 @@ export class FragmentRequest {
         return new Response(null, {headers});
       case "render":
         // Run the render hook
-        const request = await loader.render(this.fragment, this, {data: this.data});
-      
-        return request;
+        const response = await loader.render(this.fragment, this, {data: this.data});
+
+        return response;
       default:
         throw new Error(`Unrecognised hook ${request.hook}`);
       };
   };
 
-  async redirect(loader, redirect) {
+  async redirect(loader, location, status) {
     // Handle a Redirect interrupt
 
     // The browser fetch API doesn't support capturing reedirect events for security reasons.
@@ -91,8 +95,8 @@ export class FragmentRequest {
     return new Response(null, {
       status: 204,
       headers: {
-        "MicroRender-Status": redirect.status,
-        "MicroRender-Location": redirect.headers.get("Location")
+        "MicroRender-Status": status,
+        "MicroRender-Location": location
       }
     });
   };

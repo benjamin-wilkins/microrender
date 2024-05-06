@@ -41,7 +41,7 @@ class Base$ extends ExtendableFunction {
     const url = new URL(resource instanceof Request ? resource.url : resource.toString(), this._request.url);
 
     if (url.protocol == "binding:") {
-      // Run the binding using service bindings
+      // Request the binding from the server
 
       // Get the binding info
       const binding = url.pathname.split("/")[0];
@@ -57,17 +57,18 @@ class Base$ extends ExtendableFunction {
       newUrl.query = url.query;
       newUrl.hash = url.hash;
 
-      if (resource instanceof Request) {
-        resource = new Request(newUrl, resource);
-      } else {
-        resource = newUrl;
-      };
+      // Build the binding URL for the server
+      const bindingUrl = new URL(`/_binding/${binding}`, location.href);
+      bindingUrl.searchParams.set("url", newUrl);
 
-      // Fetch using the binding
-      return this._request.env[binding].fetch(resource);
+      if (resource instanceof Request) {
+        resource = new Request(bindingUrl, resource);
+      } else {
+        resource = bindingUrl;
+      };
     };
 
-    // Just a normal fetch request
+    // Normal fetch request OR a `/_binding` fetch request
     return fetch(resource, options);
   };
 
@@ -115,11 +116,6 @@ class Base$ extends ExtendableFunction {
 class Control$ extends Base$ {
   // MicroRender control APIs
 
-  constructor(request, loader, config, {headers}) {
-    super(request, loader, config);
-    this._headers = headers;
-  };
-
   url(newUrl, status=302) {
     // Get / set (redirect) the URL.
 
@@ -154,8 +150,8 @@ class Control$ extends Base$ {
       // Ensure options.path is `/` so cookies can always be found
       options.path = "/";
 
-      // Serialise cookie into `Set-Cookie` header
-      this._headers.append("Set-Cookie", getCookieString(name, value, options));
+      // Serialise cookie into `document.cookie`
+      document.cookie = getCookieString(name, value, options);
 
       // Set the cookie in the cookies Map so it can be accessed without parsing headers.
       this._request.cookies.set(name, value.toString());
@@ -192,7 +188,7 @@ class Control$ extends Base$ {
   async pass(fragment) {
     // Run another fragment's control hook.
 
-    await this._loader.control(fragment, this._request, {headers: this._headers});
+    await this._loader.control(fragment, this._request);
   };
 };
 
@@ -202,21 +198,33 @@ class Render$ extends Base$ {
   constructor(request, loader, config, data) {
     super(request, loader, config);
     this._data = data;
-    this._rewriter = new HTMLRewriter;
+    this._transforms = [];
   };
 
   _call(selector, callback) {
     // JQuery-like selector function. Runs `callback` for every element that matches the selector.
 
-    // Create an ElementHandler and add it to the HTMLRewriter
+    // Create an ElementHandler and add it to the `_transforms` array
     const handler = new ElementHandler(callback);
-    this._rewriter.on(selector, handler);
+    this._transforms.push([selector, handler]);
   };
 
-  async _transform(response) {
+  async _transform(fragmentElement) {
     // Do all the element transforms defined by the fragment
 
-    return this._rewriter.transform(response);
+    // Store all transform promises so they can be awaited latter
+    const transformPromises = [];
+    
+    // Get all registered selectors
+    for (const [selector, handler] of this._transforms) {
+      // Get all matching elements
+      for (const domElement of fragmentElement.querySelectorAll(`:scope ${selector}`)) {
+        // Run the callback and add it to the promises array
+        transformPromises.push(handler.element(domElement));
+      };
+    };
+
+    await Promise.all(transformPromises);
   };
 
   data(attr) {
@@ -232,17 +240,17 @@ export class Runtime {
     this.config = config;
   }
 
-  async control(fn, request, loader, {headers}) {
+  async control(fn, request, loader) {
     // Run the control hook.
 
     // Generate APIs
-    const $ = new Control$(request, loader, this.config, {headers});
+    const $ = new Control$(request, loader, this.config);
 
     // Run the JS
     await fn($);
   };
 
-  async render(fn, request, loader, data, {response}) {
+  async render(fn, request, loader, data, {fragmentElement}) {
     // Run the render hook.
 
     // Generate APIs
@@ -251,7 +259,7 @@ export class Runtime {
     // Run the JS
     await fn($);
 
-    // Stream the HTML
-    return $._transform(response);
+    // Transform the DOM
+    return $._transform(fragmentElement);
   };
 };

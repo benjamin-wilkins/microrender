@@ -14,7 +14,7 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export class Element {
+class Element {
   // Wrapper for DOM Element APIs.
 
   constructor(domElement) {
@@ -141,5 +141,16 @@ export class Element {
     } else {
       this.domElement.value= value;
     };
+  };
+};
+
+export class ElementHandler {
+  constructor(callback) {
+    this.callback = callback;
+  };
+
+  async element (domElement) {
+    const element = new Element(domElement);
+    await this.callback(element);
   };
 };

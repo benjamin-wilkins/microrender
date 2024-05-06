@@ -14,29 +14,22 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export class Redirect extends Error {
-  constructor(location, status=302) {
-    super();
-    this.location = location;
-    this.status = status;
+export class MicroRenderGlobal {
+  // Global `microrender` object for calling MicroRender from external code.
+
+  constructor(requestHandler) {
+    this._requestHandler = requestHandler;
   };
 
-  catch = (loader, request) => {
-    return request.redirect(loader, this.location, this.status);
+  navigate(resource) {
+    // Navigate to a new page. Resource may be a URL, a string or a Request object.
+
+    const request = new Request(resource);
+
+    // Add history entry
+    window.history.pushState(null, "", request.url);
+
+    // Get the new page
+    requestHandler.fetch(request);
   };
-
-  name = "Response";
-};
-
-export class HTTPError extends Error {
-  constructor(status) {
-    super();
-    this.status = status;
-  };
-
-  catch = (loader, request) => {
-    return request.error(loader, this.status);
-  };
-
-  name = "HTTPError";
 };

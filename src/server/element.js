@@ -212,7 +212,7 @@ export class ElementHandler {
     this.callback = callback;
   };
 
-  element = async (rewriterElement) => {
+  async element (rewriterElement) {
     const element = new Element(rewriterElement);
     await this.callback(element);
   };

@@ -14,31 +14,27 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import handleRequest from "./handleRequest.js";
-import { preLoadJS } from "./lazy.js";
-import { deserialise } from "../common/helpers.js";
 import { MicroRenderFragment } from "./customElements.js";
+import { MicroRenderGlobal } from "./global.js";
+import { RequestHandler } from "./handleRequest.js";
+import { Loader } from "./loader.js";
+import { Runtime } from "./runtime.js";
 
 export function init(fragments, config) {
-  const initialRequest = Object.create(Request.prototype);
-  initialRequest._microrender = deserialise(document.querySelector("script#__microrender_initial-request").textContent);
+  // Initialise the MicroRender client.
 
-  globalThis._microrender = {
-    fragments,
-    config,
-    fragmentCache: new Map,
-    lastRequest: initialRequest
-  };
+  // Initialise each component
+  const runtime = new Runtime(config);
+  const loader = new Loader(runtime, fragments, config);
+  const requestHandler = new RequestHandler(loader, config);
 
-  globalThis.microrender = {
-    navigate(resource) {
-      const request = new Request(resource);
-      handleRequest.fetch(request);
-      window.history.pushState(null, "", request.url);
-    }
-  };
+  // Expose the external API
+  globalThis.microrender = new MicroRenderGlobal(requestHandler);
 
-  customElements.define("microrender-fragment", MicroRenderFragment);
+  // Define the `microrender-fragment` element
+  customElements.define("microrender-fragment", MicroRenderFragment(requestHandler));
+
+  // Modify <forms> and <a> tags to be handled by MicroRender
 
   for (const elmt of document.querySelectorAll("a[href]")) {
     const href = new URL(elmt.href, location.href);
@@ -73,10 +69,10 @@ export function init(fragments, config) {
     });
   };
 
+  // Add a `popstate` handler to support back / forward navigation
+
   addEventListener("popstate", () => {
     const request = new Request(location.href);
     handleRequest.fetch(request);
   });
-
-  setTimeout(preLoadJS);
 };

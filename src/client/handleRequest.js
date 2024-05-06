@@ -14,82 +14,82 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { ErrorCatcher } from "./handleError.js";
-import { control, render } from "./runjs.js";
-import { getJS, preLoadJS } from "./lazy.js";
-import * as server from "./loadFromServer.js";
+import { MicroRenderRequest } from "../common/request.js";
+import { tryCatchAsync } from "../common/helpers.js";
+import { HTTPError } from "../common/error.js";
 
-export async function loadFragmentRender(fragment, fragmentElement, request) {
-  if (fragmentElement.requiresFetch || !_microrender.fragmentCache.has(fragment)) {
-    await server.loadFragmentRender(fragment, fragmentElement, request);
-  } else {
-    const fragmentJS = await getJS(fragment, _microrender.fragments);
+export class RequestHandler {
+  // Request handler that can be called on browsers.
 
-    if (fragmentJS) {
-      if (fragmentJS.render) {
-        await render(fragmentJS.render, fragmentElement, request);
-      };
-    };
+  constructor(loader, config) {
+    this.loader = loader;
+    this.config = config;
 
-    await render(($) => {
-      $("microrender-fragment", async (elmt) => {
-        await loadFragmentRender(elmt.attr("name"), elmt.domElement, request);
-      })
-    }, fragmentElement, request);
+    // Parse the initial request and save it as the most recent to allow timeouts
+    this.lastRequest = MicroRenderRequest.deserialise(
+      document.querySelector("script#__microrender_initial-request").textContent
+    );
+
+    setTimeout(() => this.loader.preLoadJS());
   };
-};
 
-async function loadFragmentControl(fragment, request) {
-  if (!_microrender.fragmentCache.has(fragment)) {
-    await server.loadFragmentControl(fragment, request);
-  } else {
-    const fragmentJS = await getJS("root", _microrender.fragments);
+  async fetch(jsRequest) {
+    // Handle incoming HTTP requests.
 
-    if (fragmentJS) {
-      if (fragmentJS.control) {
-        await control(fragmentJS.control, request);
-      };
-    };
+    // Add preLoadJS to the event loop to run after this
+    setTimeout(() => this.loader.preLoadJS);
+
+    // Create a MicroRenderRequest object and call its handler
+    const request = await MicroRenderRequest.read(
+      jsRequest,
+      {
+        cookies: document.cookie,
+        redirector: (...args) => this.redirector(...args)
+      }
+    );
+    
+    await tryCatchAsync(
+      // Pass control to the request to handle itself
+      () => request.handle(this.loader),
+      // If e has a `catch` method, call it. Otherwise, create an HTTPError after logging the error
+      (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.loader, request)
+    ).catch(
+      // Retry limit exceeded
+      () => document.documentElement.innerText = "500 Internal Server Error"
+    );
+
+    // Store the last request to allow timeouts
+    this.lastRequest = request;
+
+    // Remove `formData` from the request so it cannot be called by a timeout.
+    this.lastRequest.formData = null;
   };
-};
 
-export default {
-  async fetch(request) {
-    const url = new URL(request.url);
+  async update(fragment, fragmentElement) {
+    return this.loader.render(fragment, this.lastRequest, {fragmentElement});
+  };
 
-    if (!request._microrender) {
-      request._microrender = {
-        url: new URL(request.url),
-        status: 200,
-        title: "",
-        description: "",
-        cookies: new Map
-      };
+  redirector(location, status, {request}) {
+    // Handle redirections.
+    // The default redirector is simply Response.redirect, but on client runtimes this won't work as
+    // returning a Response does nothing. This overrides that functionality and should be passed to 
+    // MicroRenderRequest objects on creation.
 
-      if (request.method == "POST" && (await request.headers.get("content-type")).includes("form")) {
-        request._microrender.formData = await request.formData();
-      };
-
-      if (document.cookie) {
-        request._microrender.cookies = new Map(
-          document.cookie
-          .split(";")
-          .map(cookie => cookie.split("=")
-            .map(x => x.trim())
-          )
-        );
-      };
+    if (![301, 302, 303, 307, 308].includes(status)) {
+      // Invalid redirection code
+      throw new RangeError(`Invalid status code ${status}`);
     };
 
-    _microrender.lastRequest = request;
-
-    try {
-      await loadFragmentControl("root", request);
-      await loadFragmentRender("root", document, request);
-      setTimeout(preLoadJS);
-    } catch (e) {
-      const errorCatcher = new ErrorCatcher(request, url);
-      errorCatcher.catch(e);
+    if ([301, 302, 303].includes(status)) {
+      // Change to GET request
+      request.formData = null;
     };
-  }
+
+    // Add history entry
+    window.history.replaceState(null, "", location);
+
+    // Update request URL and retry request
+    request.url = new URL(location, request.url);
+    request.handle(this.loader);
+  };
 };

@@ -14,46 +14,49 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { serialise } from "./helpers.js";
+import { deserialise, serialise } from "./helpers.js";
 
 export class MicroRenderRequest {
   // MicroRender's internal representation of a request. This is more limited than the built-in
   // Request object (eg. only supports GET and form POST) but is more convenient.
 
-  constructor(jsRequest, {env=null, formData=null}={}) {
+  constructor(url, {env=null, formData=null, cookies="", redirector=Response.redirect}={}) {
     // Use the URL API instead of just a string
-    this.url = new URL(jsRequest.url);
+    this.url = new URL(url);
 
     // Include data that will get added to the response later
     this.status = 200;
     this.title = "";
     this.description = "";
 
-    // Include `formData` as an object as opposed to an async function
-    this.formData = formData;
+    // Include `formData` as an object as opposed to an async function, and make it non-enumerable
+    // to avoid large HTTP headers (formData should be transmitted in the HTTP body as for a normal
+    // request, and is not available on `microrender-timeout` requests).
+    Object.defineProperty(this, "formData", {value: formData, writable: true});
 
-    // Ensure `env` is non-enumerable so it is not serialised
+    // Ensure `env` and `redirector` are non-enumerable so it is not serialised
     Object.defineProperty(this, "env", {value: env});
+    Object.defineProperty(this, "redirector", {value: redirector});
 
     // Parse the 'Cookie' header
-    this.cookies = jsRequest.headers.has("Cookie") ?
+    this.cookies = cookies ?
       new Map(
-        (jsRequest.headers.get("Cookie") || "")
+        (cookies || "")
         .split(";")
         .map(cookie => 
           cookie.split("=")
             .map(x => x.trim())
         )
       ) : new Map;
-      console.log(this.cookies)
   };
 
   static async read(jsRequest, options) {
     // Create a MicroRenderRequest object from a JS Request object.
     return new MicroRenderRequest(
-      jsRequest,
+      jsRequest.url,
       {
         formData: await MicroRenderRequest.getFormData(jsRequest),
+        cookies: jsRequest.headers.get("Cookie"),
         ...options
       }
     );
@@ -70,6 +73,11 @@ export class MicroRenderRequest {
     return form ? await jsRequest.formData() : undefined;
   };
 
+  static deserialise(string) {
+    // Deserialise a MicroRenderRequest object.
+    return deserialise(string, {MicroRenderRequest});
+  }
+
   serialise() {
     // Serialise the MicroRenderRequest object.
     return serialise(this, {MicroRenderRequest});
@@ -85,11 +93,13 @@ export class MicroRenderRequest {
     return response;
   };
 
-  async redirect(loader, redirect) {
+  async redirect(loader, location, status) {
     // Handle a Redirect interrupt.
     
-    // Return the redirect response as-is
-    return redirect;
+    // Use `redirector` to decide the best action for the runtime
+    // On server runtimes this will return a standard redirect response, but on client runtimes this
+    // allows MicroRender to re-render the page without requiring subclassing
+    return this.redirector(location, status, {request: this});
   };
 
   async error(loader, status) {
@@ -100,11 +110,13 @@ export class MicroRenderRequest {
 
     const response = await this.handle(loader);
 
-    // Add the new status code onto the response
-    return new Response(response.body, {
-      status: status,
-      statusText: "",
-      headers: response.headers
-    });
+    if (typeof response != "undefined") {
+      // Add the new status code onto the response
+      return new Response(response.body, {
+        status: status,
+        statusText: "",
+        headers: response.headers
+      });
+    };
   };
 };
