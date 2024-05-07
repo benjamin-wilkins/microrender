@@ -21,7 +21,7 @@ export class FragmentRequest {
   // and extends its interface with fragment-specific properties like `fragment` and `hook`. In most
   // cases a FragmentRequest should be treated exactly the same as a MicroRenderRequest object.
 
-  constructor(request, httpUrl, {env=null, data=null}={}) {
+  constructor(request, httpUrl, {env=null, data=new Map}={}) {
     // The underlying MicroRenderRequest for this FragmentRequest
     this.request = request;
 
@@ -52,7 +52,7 @@ export class FragmentRequest {
 
     // Deserialise the fragment element's `data-*` attributes (if they exist)
     const data = jsRequest.headers.has("MicroRender-Data")
-      ? new Map(JSON.parse(jsRequest.headers.get("")))
+      ? new Map(JSON.parse(jsRequest.headers.get("MicroRender-Data")))
       : null;
 
     // Create a FragmentRequest object
