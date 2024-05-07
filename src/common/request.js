@@ -20,7 +20,7 @@ export class MicroRenderRequest {
   // MicroRender's internal representation of a request. This is more limited than the built-in
   // Request object (eg. only supports GET and form POST) but is more convenient.
 
-  constructor(url, {env=null, formData=null, cookies="", redirector=Response.redirect}={}) {
+  constructor(url, {env=null, formData=null, cookies=""}={}) {
     // Use the URL API instead of just a string
     this.url = new URL(url);
 
@@ -36,7 +36,6 @@ export class MicroRenderRequest {
 
     // Ensure `env` and `redirector` are non-enumerable so it is not serialised
     Object.defineProperty(this, "env", {value: env});
-    Object.defineProperty(this, "redirector", {value: redirector});
 
     // Parse the 'Cookie' header
     this.cookies = cookies ?
@@ -76,7 +75,7 @@ export class MicroRenderRequest {
   static deserialise(string) {
     // Deserialise a MicroRenderRequest object.
     return deserialise(string, {MicroRenderRequest});
-  }
+  };
 
   serialise() {
     // Serialise the MicroRenderRequest object.
@@ -96,10 +95,10 @@ export class MicroRenderRequest {
   async redirect(loader, location, status) {
     // Handle a Redirect interrupt.
     
-    // Use `redirector` to decide the best action for the runtime
-    // On server runtimes this will return a standard redirect response, but on client runtimes this
-    // allows MicroRender to re-render the page without requiring subclassing
-    return this.redirector(location, status, {request: this});
+    // Create a `Response` object. On the server side, this can be sent straight to the client as
+    // with any other response, but on the client runtime it should be caught by the request handler
+    // to enact the new request.
+    return Response.redirect(location, status, {request: this});
   };
 
   async error(loader, status) {
@@ -119,4 +118,7 @@ export class MicroRenderRequest {
       });
     };
   };
+
+  // Restore defaults when deserialising
+  formData = null;
 };

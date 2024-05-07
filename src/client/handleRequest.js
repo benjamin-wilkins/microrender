@@ -43,12 +43,11 @@ export class RequestHandler {
     const request = await MicroRenderRequest.read(
       jsRequest,
       {
-        cookies: document.cookie,
-        redirector: (...args) => this.redirector(...args)
+        cookies: document.cookie
       }
     );
     
-    await tryCatchAsync(
+    const response = await tryCatchAsync(
       // Pass control to the request to handle itself
       () => request.handle(this.loader),
       // If e has a `catch` method, call it. Otherwise, create an HTTPError after logging the error
@@ -63,33 +62,33 @@ export class RequestHandler {
 
     // Remove `formData` from the request so it cannot be called by a timeout.
     this.lastRequest.formData = null;
+
+    if (response && response.status) {
+      // Further action may be required
+
+      switch (response.status) {
+        case 301:
+        case 302:
+        case 303:
+          // Redirect that requires method change to GET
+
+          // Remove formData if exists
+          request.formData = null;
+        case 307:
+        case 308:
+          // Any redirect
+
+          // Add history entry
+          window.history.replaceState(null, "", response.headers.get("Location"));
+
+          // Update request URL and retry request
+          request.url = new URL(location, response.headers.get("Location"));
+          request.handle(this.loader);
+      };
+    };
   };
 
   async update(fragment, fragmentElement) {
     return this.loader.render(fragment, this.lastRequest, {fragmentElement});
-  };
-
-  redirector(location, status, {request}) {
-    // Handle redirections.
-    // The default redirector is simply Response.redirect, but on client runtimes this won't work as
-    // returning a Response does nothing. This overrides that functionality and should be passed to 
-    // MicroRenderRequest objects on creation.
-
-    if (![301, 302, 303, 307, 308].includes(status)) {
-      // Invalid redirection code
-      throw new RangeError(`Invalid status code ${status}`);
-    };
-
-    if ([301, 302, 303].includes(status)) {
-      // Change to GET request
-      request.formData = null;
-    };
-
-    // Add history entry
-    window.history.replaceState(null, "", location);
-
-    // Update request URL and retry request
-    request.url = new URL(location, request.url);
-    request.handle(this.loader);
   };
 };

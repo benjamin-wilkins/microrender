@@ -30,6 +30,6 @@ export class MicroRenderGlobal {
     window.history.pushState(null, "", request.url);
 
     // Get the new page
-    requestHandler.fetch(request);
+    this._requestHandler.fetch(request);
   };
 };
