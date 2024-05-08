@@ -32,7 +32,7 @@ export class MicroRenderRequest {
     // Include `formData` as an object as opposed to an async function, and make it non-enumerable
     // to avoid large HTTP headers (formData should be transmitted in the HTTP body as for a normal
     // request, and is not available on `microrender-timeout` requests).
-    Object.defineProperty(this, "formData", {value: formData, writable: true});
+    Object.defineProperty(this, "formData", {value: formData, writable: true, enumerable: false});
 
     // Ensure `env` and `redirector` are non-enumerable so it is not serialised
     Object.defineProperty(this, "env", {value: env});
