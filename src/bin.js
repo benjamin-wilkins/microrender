@@ -165,7 +165,8 @@ async function buildJS(fragments) {
     sourcemap: config.sourceMap,
     format: "esm",
     splitting: false,
-    minify: config.minify
+    minify: config.minify,
+    keepNames: true
   });
 
   await esbuild.build({
@@ -175,7 +176,8 @@ async function buildJS(fragments) {
     sourcemap: config.sourceMap,
     format: "esm",
     splitting: true,
-    minify: config.minify
+    minify: config.minify,
+    keepNames: true
   });
 };
 

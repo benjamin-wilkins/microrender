@@ -15,12 +15,10 @@
 */
 
 async function control ($) {
-  let visits = $.cookie("visits");
+  let visits = parseInt($.cookie("visits"));
 
-  if (typeof visits == "undefined") {
+  if (isNaN(visits)) {
     visits = 0;
-  } else {
-    visits = parseInt(visits);
   };
 
   ++visits;
