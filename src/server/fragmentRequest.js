@@ -46,7 +46,7 @@ export class FragmentRequest {
     const request = MicroRenderRequest.deserialise(jsRequest.headers.get("MicroRender-Request"));
 
     // Add the formData to the request from the fragment request body
-    if (jsRequest.method == "POST") {
+    if (jsRequest.method == "POST" && jsRequest.headers.get("Content-Type").includes("form")) {
       request.formData = await jsRequest.formData();
     };
 

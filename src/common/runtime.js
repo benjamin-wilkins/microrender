@@ -19,6 +19,7 @@ import { ExtendableFunction, getCookieString } from "../common/helpers.js";
 
 class Base$ extends ExtendableFunction {
   // Global MicroRender APIs common to all hooks.
+  // Contains runtime-independent methods and delegates to `strategy` for runtime-specific methods.
 
   constructor(request, loader, config, strategy) {
     super();

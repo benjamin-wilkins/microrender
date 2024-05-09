@@ -119,6 +119,12 @@ export class MicroRenderRequest {
     };
   };
 
-  // Restore defaults when deserialising
-  formData = null;
+  // Ensure formData is null by default
+  get formData() {
+    return this._formData || null
+  };
+
+  set formData(value) {
+    this._formData = value
+  };
 };
