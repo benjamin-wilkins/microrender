@@ -15,7 +15,7 @@
 */
 
 async function control ($) {
-  const path = $.url().pathname;
+  const path = $.path();
   const error = $.error();
 
   if (error >= 400) {
@@ -28,7 +28,7 @@ async function control ($) {
       await $.pass("home");
       break
     case "/redirect":
-      $.url("/");
+      $.path("/");
     case "/error":
       throw new Error();
     default:
@@ -37,7 +37,7 @@ async function control ($) {
 };
 
 async function render ($) {
-  const path = $.url().pathname;
+  const path = $.path();
   const error = $.error();
 
   if (error >= 400) {

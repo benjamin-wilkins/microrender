@@ -70,8 +70,10 @@ class Base$ extends ExtendableFunction {
     // Return null if the request is not a form POST request. Otherwise, get a field from the form,
     // or `true` if no field is specified.
 
+    // Compatiable with the `$.search()` API, but handles POST not GET.
+
     // Always return `null` from non-form POST requests
-    if (this._request.formData === null) return null;
+    if (!this._request.formData) return null;
 
     if (typeof field == "undefined") {
       // Is the request a form POST request?
@@ -82,8 +84,30 @@ class Base$ extends ExtendableFunction {
   };
 
   url() {
-    // get the URL.
+    // Get the URL.
     return this._request.url;
+  };
+
+  path() {
+    // Get the URL path.
+    return this._request.url.pathname;
+  };
+
+  search(field) {
+    // Return null if the request is not a form GET request. Otherwise, get a field from the query
+    // params, or `true` if no field is specified.
+
+    // Compatiable with the `$.form()` API, but handles GET not POST.
+
+    // Always return `null` if no query params
+    if (!this._request.url.search) return null;
+
+    if (typeof field == "undefined") {
+      // Is the request a form GET request?
+      return true;
+    };
+
+    return this._request.url.searchParams.get(field);
   };
 
   error() {
@@ -122,6 +146,17 @@ export class Control$ extends Base$ {
     };
 
     return super.url();
+  };
+
+  path(newPath, status=302) {
+    // Get / set (redirect) the URL.
+
+    // Uses `$.url` as a setter
+    if (typeof newPath != "undefined") {
+      return this.url(newPath, status);
+    };
+
+    return super.path();
   };
 
   error(code) {
