@@ -15,9 +15,9 @@
 */
 
 async function render ($) {
-  const now = new Date();
+  const now = (new Date()).toLocaleString($.lang(), {timeZone: $.tz()});
 
-  $("#clock-time", (elmt) => {elmt.text(now.toTimeString())});
+  $("#clock-time", (elmt) => {elmt.text(now)});
 };
 
 export const server = {render};
