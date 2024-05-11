@@ -15,13 +15,19 @@ These APIs can be accessed on the $ object passed to any hook (exported function
 
 | Syntax                                                                | Description                                                                               |
 |-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `$.form(field: string)` => `string` \| `void`                         | Get form fields from POST requests. `undefined` unless the method is `POST`.              |
 | `$.fetch(url: any, ?options: RequestInit)` => `Promise<Response>`     | Wrapper around the fetch api. Uses cloudflare service bindings where possible.            |
-| `$.url()` => `URL`                                                    | Gets the current URL. Can be modified in the `control` hook.                              |
+| `$.form(field: string)` => `string` \| `null`                         | Get form fields from POST requests. Returns `null` unless the method is `POST`.           |
+| `$.url()` => `URL`                                                    | Gets the current URL. Can be modified (ie. redirect) in the `control` hook.               |
+| `$.path()` => `string`                                                | Gets the current URL path. Can be modified in the `control` hook.                         |
+| `$.search(field: string)` => `string` \| `null`                       | Get query params from requests. Returns `null` if there are no query params.              |
 | `$.error()` => `number`                                               | Gets the current HTTP status. Can be modified in the `control` hook. Default `200`.       |
 | `$.cookie(name: string)` => `string`                                  | Reads browser cookies.                                                                    |
 | `$.title()` => `string`                                               | Gets the title variable. Can be modified in the `control` hook. Default `""`.             |
 | `$.desc()` => `string`                                                | Gets the description variable. Can be modified in the `control` hook. Default `""`.       |
+| `$.loc()` => `Location`                                               | Get the user's approximate location from their IP address.                                |
+| `$.relocate()` => `Promise<Location>`                                 | Make a server request to update the user's location. Also updates `$.tz()` and `$.lang()` |
+| `$.tz()` => `string`                                                  | Gets the user's timezone from their IP address.                                           |
+| `$.lang()` => `Array`                                                 | Gets the user's preferred languages from their `Accept-Language` header                   |
 
 ## Render APIs
 
@@ -58,8 +64,9 @@ run before any of the body code. These (mostly) extend the global APIs.
 
 | Syntax                                                                | Description                                                                               |
 |-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| `$.url(url: string \| URL)` => `void`                                 | Changes the current URL.                                                                  |
-| `$.error(code: number)` => `void`                                     | Changes the current HTTP status.                                                          |
+| `$.url(url: string \| URL)` => `void`                                 | Changes the current URL (ie. redirects).                                                  |
+| `$.path(path: string \| URL)` => `void`                               | Equivalent to `$.url()`                                                                   |
+| `$.error(code: number)` => `void`                                     | Changes the current HTTP status and re-renders the response.                              |
 | `$.cookie(name: string, value: string)` => ` void`                    | Sets browser cookies.                                                                     |
 | `$.title(title: string)` => `void`                                    | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.    |
 | `$.desc(desc: string)` => `void`                                      | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.    |

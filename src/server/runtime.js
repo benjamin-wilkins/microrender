@@ -39,6 +39,13 @@ class BaseStrategy {
     // Fetch using the binding
     return this.request.env[binding].fetch(resource, options);
   };
+
+  async doUpdateGeoLocation() {
+    // Get an updated GeoLocation object.
+
+    // The geolocation won't have changed so just return the same one
+    return this.request.geolocation;
+  };
 };
 
 class ControlStrategy extends BaseStrategy {

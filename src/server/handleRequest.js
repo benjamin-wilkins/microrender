@@ -15,9 +15,10 @@
 */
 
 import { HTTPError } from "../common/error.js";
-import { tryCatchAsync } from "../common/helpers.js";
+import { parseQ, tryCatchAsync } from "../common/helpers.js";
 import { MicroRenderRequest } from "../common/request.js";
 import { FragmentRequest } from "./fragmentRequest.js";
+import { GeoLocation } from "../common/geolocation.js";
 
 class FinishingTouches {
   // Adds final modifiations before the HTML is streamed to the client.
@@ -30,6 +31,22 @@ class FinishingTouches {
       comment.remove();
     };
   };
+};
+
+function createGeoLocation(jsRequest) {
+  // Create a geolocation object from the IP and datacentre location.
+
+  return new GeoLocation(
+    jsRequest.cf.continent,
+    jsRequest.cf.country,
+    jsRequest.cf.regionCode,
+    jsRequest.cf.city,
+    jsRequest.cf.postalCode,
+    jsRequest.cf.timezone,
+    parseQ(jsRequest.headers.get("Accept-Language")),
+    jsRequest.cf.latitude,
+    jsRequest.cf.longitude
+  )
 };
 
 export class RequestHandler {
@@ -67,15 +84,28 @@ export class RequestHandler {
       return binding.fetch(newRequest);
     };
 
+    // Get the user's approximate location
+    if (url.pathname.startsWith("/_location")) {
+      const geolocation = createGeoLocation(jsRequest);
+      return new Response(geolocation.serialise());
+    };
+
     // Create a MicroRenderRequest or FragmentRequest object and call its handler
     let request;
     
     if (url.pathname.startsWith("/_fragment/")) {
       // The client is requesting a single fragment as part of a larger request
-      request = await FragmentRequest.read(jsRequest, {env});
+      request = await FragmentRequest.read(
+        jsRequest, {env}
+      );
     } else {
       // This is an ordinary request
-      request = await MicroRenderRequest.read(jsRequest, {env});
+      request = await MicroRenderRequest.read(
+        jsRequest, {
+          env,
+          geolocation: createGeoLocation(jsRequest)
+        }
+      );
     };
 
     return this.finishingTouches.transform(

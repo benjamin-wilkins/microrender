@@ -1,4 +1,4 @@
-<!--
+/*
   This file is part of a demo of MicroRender, a basic rendering framework.
   Copyright (C) 2023-2024 Benjamin Wilkins
 
@@ -12,16 +12,25 @@
 
   You should have received a copy of the GNU Lesser General Public License along with MicroRender.
   If not, see <https://www.gnu.org/licenses/>.
--->
+*/
 
-<div class="bordered">
-  Home Fragment
-  <p id="fragment2-message1"></p>
-  <p id="fragment2-message2"></p>
-  <microrender-fragment name="form"></microrender-fragment>
-  <microrender-fragment name="visit-counter"></microrender-fragment>
-  <microrender-fragment name="clock" microrender-timeout="1s"></microrender-fragment>
-  <microrender-fragment name="location"></microrender-fragment>
-  <p>Attribute message: <span id="home-attr-msg"></span></p>
-  <p>Backend said: <span id="home-backend-msg"></span></p>
-</div>
+let lastRendered = new Date();
+
+async function render ($) {
+  const loc = await $.relocate();
+
+  $("#location", (elmt) => {elmt.text(`${loc.city} ${loc.postCode}, ${loc.country}`)});
+  $("#location-tz", (elmt) => {elmt.text($.tz())});
+};
+
+async function renderIfRecent ($) {
+  const now = new Date();
+
+  if (now - lastRendered > 1000) {
+    render($);
+    lastRendered = now;
+  };
+};
+
+export const server = {render};
+export const browser = {render: renderIfRecent};

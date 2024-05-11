@@ -15,7 +15,7 @@
 */
 
 async function control ($) {
-  if ($.form() || $.url().search) {
+  if ($.form() || $.search()) {
     $.title("Form Result");
   };
 };
@@ -29,9 +29,9 @@ async function render ($) {
     form = true;
     name = $.form("name");
     method = "POST";
-  } else if ($.url().searchParams.has("name")) {
+  } else if ($.search("name")) {
     form = true;
-    name = $.url().searchParams.get("name");
+    name = $.search("name");
     method = "GET";
   };
 
