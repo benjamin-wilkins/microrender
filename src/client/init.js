@@ -73,6 +73,6 @@ export function init(fragments, config) {
 
   addEventListener("popstate", () => {
     const request = new Request(location.href);
-    handleRequest.fetch(request);
+    requestHandler.fetch(request);
   });
 };
