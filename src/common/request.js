@@ -14,13 +14,14 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { GeoLocation } from "./geolocation.js";
 import { deserialise, serialise } from "./helpers.js";
 
 export class MicroRenderRequest {
   // MicroRender's internal representation of a request. This is more limited than the built-in
   // Request object (eg. only supports GET and form POST) but is more convenient.
 
-  constructor(url, {env=null, formData=null, cookies=""}={}) {
+  constructor(url, {env=null, formData=null, cookies="", geolocation}) {
     // Use the URL API instead of just a string
     this.url = new URL(url);
 
@@ -28,6 +29,9 @@ export class MicroRenderRequest {
     this.status = 200;
     this.title = "";
     this.description = "";
+
+    // Store geolocation on the request
+    this.geolocation = geolocation;
 
     // Include `formData` as an object as opposed to an async function, and make it non-enumerable
     // to avoid large HTTP headers (formData should be transmitted in the HTTP body as for a normal
@@ -74,12 +78,12 @@ export class MicroRenderRequest {
 
   static deserialise(string) {
     // Deserialise a MicroRenderRequest object.
-    return deserialise(string, {MicroRenderRequest});
+    return deserialise(string, {MicroRenderRequest, GeoLocation});
   };
 
   serialise() {
     // Serialise the MicroRenderRequest object.
-    return serialise(this, {MicroRenderRequest});
+    return serialise(this, {MicroRenderRequest, GeoLocation});
   };
 
   async handle(loader) {

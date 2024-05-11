@@ -16,6 +16,7 @@
 
 import { Control$, Render$ } from "../common/runtime.js";
 import { ElementHandler } from "../client/element.js";
+import { GeoLocation } from "../common/geolocation.js";
 
 class BaseStrategy {
   // Strategy passed to the $ constructor. Contains runtime-specific methods common to all hooks.
@@ -42,6 +43,14 @@ class BaseStrategy {
 
     // Fetch over HTTP
     return fetch(resource, options);
+  };
+
+  async doUpdateGeoLocation() {
+    // Get an updated GeoLocation object.
+
+    // Fetch a geolocation from the server
+    const response = await fetch("/_location");
+    return GeoLocation.deserialise(await response.text());
   };
 };
 

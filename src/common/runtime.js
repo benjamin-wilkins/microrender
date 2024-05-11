@@ -126,8 +126,33 @@ class Base$ extends ExtendableFunction {
   };
 
   desc() {
-    // Get the page description
+    // Get the page description.
     return this._request.description;
+  };
+
+  loc() {
+    // Get an object of location data.
+    return this._request.geolocation.loc();
+  };
+
+  async relocate() {
+    // Make a geolocation request to update the user's position.
+
+    const newLocation = await this._strategy.doUpdateGeoLocation();
+    Object.assign(this._request.geolocation, newLocation);
+
+    // Return the new location data
+    return this.loc();
+  };
+
+  tz() {
+    // Get the user timezone.
+    return this._request.geolocation.tz;
+  };
+
+  lang() {
+    // Get the user's preferred languages. Returns an array.
+    return this._request.geolocation.lang;
   };
 };
 

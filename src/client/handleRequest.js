@@ -30,6 +30,9 @@ export class RequestHandler {
       document.querySelector("script#__microrender_initial-request").textContent
     );
 
+    // Get the geolocation data from the last request
+    this.geolocation = this.lastRequest.geolocation;
+
     setTimeout(() => this.loader.preLoadJS());
   };
 
@@ -43,7 +46,8 @@ export class RequestHandler {
     const request = await MicroRenderRequest.read(
       jsRequest,
       {
-        cookies: document.cookie
+        cookies: document.cookie,
+        geolocation: this.geolocation
       }
     );
     

@@ -21,7 +21,7 @@ export class FragmentRequest {
   // and extends its interface with fragment-specific properties like `fragment` and `hook`. In most
   // cases a FragmentRequest should be treated exactly the same as a MicroRenderRequest object.
 
-  constructor(request, httpUrl, {env=null, data=new Map}={}) {
+  constructor(request, httpUrl, {env, data=new Map}) {
     // The underlying MicroRenderRequest for this FragmentRequest
     this.request = request;
 
@@ -39,7 +39,7 @@ export class FragmentRequest {
     Object.defineProperty(this, "env", {value: env});
   };
 
-  static async read(jsRequest, {env=null}={}) {
+  static async read(jsRequest, {env}) {
     // Create a FragmentRequest object from a JS Request object.
 
     // Deserialise the underlying MicroRenderRequest object from the `MicroRender-Request` HTTP header.
@@ -126,4 +126,7 @@ export class FragmentRequest {
 
   get formData() {return this.request.formData};
   set formData(value) {this.request.formData = value};
+
+  get geolocation() {return this.request.geolocation};
+  set geolocation(value) {this.request.geolocation = value};
 };
