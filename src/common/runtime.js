@@ -132,14 +132,13 @@ class Base$ extends ExtendableFunction {
 
   loc() {
     // Get an object of location data.
-    return this._request.geolocation.loc();
+    return this._request.geolocation.point;
   };
 
   async relocate() {
     // Make a geolocation request to update the user's position.
 
-    const newLocation = await this._strategy.doUpdateGeoLocation();
-    Object.assign(this._request.geolocation, newLocation);
+    this._request.geolocation = await this._strategy.doUpdateGeoLocation();
 
     // Return the new location data
     return this.loc();

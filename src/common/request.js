@@ -14,7 +14,6 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { GeoLocation } from "./geolocation.js";
 import { deserialise, serialise } from "./helpers.js";
 
 export class MicroRenderRequest {
@@ -78,12 +77,12 @@ export class MicroRenderRequest {
 
   static deserialise(string) {
     // Deserialise a MicroRenderRequest object.
-    return deserialise(string, {MicroRenderRequest, GeoLocation});
+    return deserialise(string, {MicroRenderRequest});
   };
 
   serialise() {
     // Serialise the MicroRenderRequest object.
-    return serialise(this, {MicroRenderRequest, GeoLocation});
+    return serialise(this, {MicroRenderRequest});
   };
 
   async handle(loader) {

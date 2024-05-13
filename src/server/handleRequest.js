@@ -15,10 +15,9 @@
 */
 
 import { HTTPError } from "../common/error.js";
-import { parseQ, tryCatchAsync } from "../common/helpers.js";
+import { parseQ, tryCatchAsync, serialise } from "../common/helpers.js";
 import { MicroRenderRequest } from "../common/request.js";
 import { FragmentRequest } from "./fragmentRequest.js";
-import { GeoLocation } from "../common/geolocation.js";
 
 class FinishingTouches {
   // Adds final modifiations before the HTML is streamed to the client.
@@ -33,20 +32,22 @@ class FinishingTouches {
   };
 };
 
-function createGeoLocation(jsRequest) {
+function getLocation(jsRequest) {
   // Create a geolocation object from the IP and datacentre location.
 
-  return new GeoLocation(
-    jsRequest.cf.continent,
-    jsRequest.cf.country,
-    jsRequest.cf.regionCode,
-    jsRequest.cf.city,
-    jsRequest.cf.postalCode,
-    jsRequest.cf.timezone,
-    parseQ(jsRequest.headers.get("Accept-Language")),
-    jsRequest.cf.latitude,
-    jsRequest.cf.longitude
-  )
+  return {
+    point: {
+      continent: jsRequest.cf.continent,
+      country: jsRequest.cf.country,
+      region: jsRequest.cf.regionCode,
+      city: jsRequest.cf.city,
+      postCode: jsRequest.cf.postalCode,
+      lat: jsRequest.cf.latitude,
+      long: jsRequest.cf.longitude
+    },
+    tz: jsRequest.cf.timezone,
+    lang: parseQ(jsRequest.headers.get("Accept-Language"))
+  };
 };
 
 export class RequestHandler {
@@ -86,8 +87,8 @@ export class RequestHandler {
 
     // Get the user's approximate location
     if (url.pathname.startsWith("/_location")) {
-      const geolocation = createGeoLocation(jsRequest);
-      return new Response(geolocation.serialise());
+      const geolocation = getLocation(jsRequest);
+      return new Response(serialise(geolocation));
     };
 
     // Create a MicroRenderRequest or FragmentRequest object and call its handler
@@ -103,7 +104,7 @@ export class RequestHandler {
       request = await MicroRenderRequest.read(
         jsRequest, {
           env,
-          geolocation: createGeoLocation(jsRequest)
+          geolocation: getLocation(jsRequest)
         }
       );
     };
