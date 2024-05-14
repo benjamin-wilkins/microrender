@@ -125,6 +125,6 @@ export class ServerLoader {
         };
       };
   
-      await Promise.all(fragmentPromises);
+      return Promise.all(fragmentPromises);
     };
   };

@@ -32,8 +32,6 @@ export class RequestHandler {
 
     // Get the geolocation data from the last request
     this.geolocation = this.lastRequest.geolocation;
-
-    setTimeout(() => this.loader.preLoadJS());
   };
 
   async fetch(jsRequest) {
