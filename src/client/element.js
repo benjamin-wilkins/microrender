@@ -21,41 +21,24 @@ class Element {
     this.domElement = domElement;
   };
 
-  getAttribute = (attr) => {
-    return this.domElement.getAttribute(attr)
-  };
-
-  hasAttribute = (attr) => {
-    return this.domElement.hasAttribute(attr)
-  };
-
-  setAttribute = (attr, value) => {
-    this.domElement.setAttribute(attr, value)
-  };
-
-  removeAttribute = (attr) => {
-    this.domElement.removeAttribute(attr)
-  };
-
   attr = (attr, value) => {
-    // Shorthand for other *Attribute functions.
+    // Get / set HTML attributes
 
     if (typeof value == "undefined") {
       // Only attr argument given
-      return this.getAttribute(attr);
+      return this.domElement.getAttribute(attr);
 
     } else if (value == false) {
-      this.removeAttribute(attr);
+      this.domElement.removeAttribute(attr);
 
     } else {
-      this.setAttribute(attr, value);
+      this.domElement.setAttribute(attr, value);
     };
   };
 
   boolean = (attr, value) => {
-    // Simplifies working with boolean attributes as HTML boolean
-    // attributes only affect the original state of the DOM so
-    // updating them with setAttribute() does nothing.
+    // Simplifies working with boolean attributes as HTML boolean attributes only affect the
+    // original state of the DOM so updating them with `.attr()` does nothing.
 
     if (value == true) {
       this.domElement[attr] = true;
@@ -77,42 +60,31 @@ class Element {
     this.domElement.textContent = content;
   };
 
-  getStyle = (property) => {
-    // Gets style from the style property, not computed styles,
-    // in order to match server.
-
-    return this.domElement.style.getPropertyValue(property);
-  };
-
-  setStyle = (property, value) => {
-    this.domElement.style.setProperty(property, value);
-  };
-
-  removeStyle = (property) => {
-    this.setStyle(property, "")
-  };
-
   style = (property, value) => {
-    // Shorthand for other *Style functions.
+    // Get and set CSS rules in the HTML `style` attribute.
 
     if (typeof value == "undefined") {
       // Only one argument given.
-      return this.getStyle(property);
+
+      // Gets style from the style property, not computed styles, so that it matches the server.
+      return this.domElement.style.getPropertyValue(property);
 
     } else {
-      this.setStyle(property, value);
+      this.domElement.style.setProperty(property, value);
     };
   };
 
-  getClass = ($class) => {
-    return this.domElement.classList.contains($class);
-  };
+  class = ($class, value) => {
+    // Get and modify classes in the HTML `class` attribute. 
 
-  setClass = ($class, value) => {
-    if (value == true) {
-      this.domElement.classList.add($class);
-    } else if (value == false) {
-      this.domElement.classList.remove($class);
+    if (typeof value == "undefined") {
+      return this.domElement.classList.contains($class);
+    } else {
+      if (value) {
+        this.domElement.classList.add($class);
+      } else {
+        this.domElement.classList.remove($class);
+      };
     };
   };
 
@@ -120,19 +92,8 @@ class Element {
     this.domElement.classList.toggle($class);
   };
 
-  class = ($class, value) => {
-    // Shorthand for other *Class functions.
-
-    if (typeof value == "undefined") {
-      return this.getClass($class);
-    } else {
-      this.setClass($class, value);
-    };
-  };
-
   value = (value) => {
-    // Wrapper around value property as HTML attribute value only
-    // affects the initial valuue.
+    // Wrapper around value property as HTML attribute value only  affects the initial value.
 
     if (typeof value == "undefined") {
       // No arguments given

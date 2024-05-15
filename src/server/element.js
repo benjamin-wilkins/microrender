@@ -24,51 +24,34 @@ class Element {
     this.rewriterElement = rewriterElement
   };
 
-  getAttribute = (attr) => {
-    return this.rewriterElement.getAttribute(attr);
-  };
-
-  hasAttribute = (attr) => {
-    return this.rewriterElement.hasAttribute(attr);
-  };
-
-  setAttribute = (attr, value) => {
-    this.rewriterElement.setAttribute(attr, value);
-  };
-
-  removeAttribute = (attr) => {
-    this.rewriterElement.removeAttribute(attr);
-  };
-
   attr = (attr, value) => {
-    // Shorthand for other *Attribute functions.
+    // Get / set HTML attributes
 
     if (typeof value == "undefined") {
       // Only attr argument given
-      return this.getAttribute(attr);
+      return this.rewriterElement.getAttribute(attr);
 
     } else if (value == false) {
-      this.removeAttribute(attr);
+      this.rewriterElement.removeAttribute(attr);
 
     } else {
-      this.setAttribute(attr, value);
+      this.rewriterElement.setAttribute(attr, value);
     };
   };
 
   boolean = (attr, value) => {
-    // Simplifies working with boolean attributes as HTML boolean
-    // attributes only affect the original state of the DOM so
-    // updating them with setAttribute() does nothing.
+    // Simplifies working with boolean attributes as HTML boolean attributes only affect the
+    // original state of the DOM so updating them with `.attr()` does nothing.
 
     if (value == true) {
-      this.setAttribute(attr, attr);
+      this.attr(attr, attr);
 
     } else if (value == false) {
-      this.removeAttribute(attr);
+      this.attr(attr, false);
 
     } else {
       // Only attr value given
-      return this.hasAttribute(attr);
+      return this.rewriterElement.hasAttribute(attr);
     };
   };
 
@@ -80,129 +63,78 @@ class Element {
     this.rewriterElement.setInnerContent(content, {html: false});
   };
 
-  getStyle = (property) => {
-    // No HTMLRewriter style API so parses the attribute manually.
-
-    // No style attribute
-    if (!this.hasAttribute("style")) return;
+  style = (property, value) => {
+    // Get and set CSS rules in the HTML `style` attribute.
+    // No HTMLRewriter classList API so parses the attribute manually.
 
     // Parse styles into map
     const styles = new Map(
-      this.getAttribute("style")
-      .split(";")
-      .map(declaration =>
-        declaration.split(":")
-        .map(x => x.trim())
+      this.attr("style")
+        ?.split?.(";")
+        ?.map?.(declaration => 
+          declaration.split(":")
+          .map(x => x.trim()
+        )
       )
     );
 
     // Remove added blank style
     styles.delete("");
-
-    return styles.get(property);
-  };
-
-  setStyle = (property, value) => {
-    // No HTMLRewriter style API so parses the attribute manually.
-
-    // Parse styles into map
-    let styles = new Map;
-
-    if (this.getAttribute("style")) {
-      styles = new Map(
-        this.getAttribute("style")
-        .split(";")
-        .map(declaration => 
-          declaration.split(":")
-          .map(x => x.trim())
-        )
-      );
-    };
-
-    // Remove added blank style
-    styles.delete("");
-
-    // Update the property
-    if (value == "" || value == null) {
-      styles.delete(property);
-    } else {
-      styles.set(property, value);
-    };
-
-    // Serialise the styles map into the style attribute
-    this.setAttribute(
-      "style",
-      Array.from(styles.entries())
-      .map(declaration => declaration.join(": "))
-      .join("; ")
-    );
-  };
-
-  removeStyle = (property) => {
-    this.setStyle(property, "");
-  };
-
-  style = (property, value) => {
-    // Shorthand for other *Style functions.
     
     if (typeof value == "undefined") {
       // Only attr argument given
-      return this.getStyle(property);
-
+      return styles.get(property);
     } else {
-      this.setStyle(property, value);
+      // Update the property
+      if (value == "" || value == null) {
+        styles.delete(property);
+      } else {
+        styles.set(property, value);
+      };
+
+      // Serialise the styles map into the style attribute
+      this.attr(
+        "style",
+        Array.from(styles.entries())
+        .map(declaration => declaration.join(": "))
+        .join("; ")
+      );
     };
   };
 
-  getClass = ($class) => {
-    // No HTMLRewriter classList API so parses the attribute manually.
+  class = ($class, value) => {
+    // Get and modify classes in the HTML `class` attribute. 
 
-    // No class attribute
-    if (!this.hasAttribute("class")) return false;
+    let classList = this.attr("class")?.split?.(" ") || new Array;
 
-    return this.getAttribute("class").split(" ").includes($class);
-  };
+    if (typeof value == "undefined") {
+      // Only $class argument given
+      return classList.includes($class);
+    } else {
+      if (value) {
+        // Add class
+        classList.push($.class)
+      } else {
+        // Remove class
+        classList = classList.filter(value => value != $class);
+      };
 
-  setClass = ($class, value) => {
-    // No HTMLRewriter classList API so parses the attribute manually.
-
-    // Store all classes in an array
-    let classList = this.hasAttribute("class") ? this.getAttribute("class").split(" ") : new Array();
-
-    if (value == true && !classList.includes($class)) {
-      // Add the class to the classList array
-      classList.push($class);
-      this.setAttribute("class", classList.join(" "));
-
-    } else if (value == false && classList.includes($class)) {
-      // Remove the class from the classList array
-      classList = classList.filter((value, index, arr) => {value != $class});
-      this.setAttribute("class", classList.join(" "));
+      this.attr("class", classList.join(" "));
     };
   };
 
   toggleClass = ($class) => {
-    this.setClass($class, !this.getClass($class));
-  };
-
-  class = ($class, value) => {
-    // Shorthand for other *Class functions.
-
-    if (typeof value == "undefined") {
-      // Only $class argument given
-      return this.getClass($class);
-    } else {
-      this.setClass($class, value);
-    };
+    // Get the class and invert it
+    this.class($class, !this.class($class));
   };
 
   value = (value) => {
     if (typeof value == "undefined") {
       // No arguments given
-      return this.getAttribute("value");
+      return this.attr("value");
       
     } else {
-      this.setAttribute("value", value);
+      this.attr("value", value);
     };
   };
 };
