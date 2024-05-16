@@ -21,7 +21,7 @@ class Element {
     this.#domElement = domElement;
   };
 
-  attr = (attr, value) => {
+  attr(attr, value) {
     // Get / set HTML attributes
 
     if (typeof value == "undefined") {
@@ -36,7 +36,7 @@ class Element {
     };
   };
 
-  boolean = (attr, value) => {
+  boolean(attr, value) {
     // Simplifies working with boolean attributes as HTML boolean attributes only affect the
     // original state of the DOM so updating them with `.attr()` does nothing.
 
@@ -52,7 +52,7 @@ class Element {
     };
   };
 
-  html = (content) => {
+  html(content) {
     this.#domElement.innerHTML = content;
   };
 
@@ -74,7 +74,7 @@ class Element {
     };
   };
 
-  class = ($class, value) => {
+  class($class, value) {
     // Get and modify classes in the HTML `class` attribute. 
 
     if (typeof value == "undefined") {
@@ -88,11 +88,11 @@ class Element {
     };
   };
 
-  toggleClass = ($class) => {
+  toggleClass($class) {
     this.#domElement.classList.toggle($class);
   };
 
-  value = (value) => {
+  value(value) {
     // Wrapper around value property as HTML attribute value only  affects the initial value.
 
     if (typeof value == "undefined") {
