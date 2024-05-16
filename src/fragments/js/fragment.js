@@ -14,8 +14,6 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { serialise } from "../../common/helpers.js";
-
 async function serverRender ($) {
   const requestData = $._reqString().replace("</script", "</scr\\ipt");
 
