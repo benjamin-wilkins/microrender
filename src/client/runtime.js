@@ -22,8 +22,8 @@ class BaseStrategy {
   // Strategy passed to the $ constructor. Contains runtime-specific methods common to all hooks.
 
   constructor(request, config) {
-    this.request = request;
-    this.config = config;
+    this.#request = request;
+    this.#config = config;
   };
 
   doBindingFetch(binding, bindingUrl, resource, options) {
@@ -52,6 +52,9 @@ class BaseStrategy {
     const response = await fetch("/_location");
     return deserialise(await response.text());
   };
+
+  #request;
+  #config;
 };
 
 class ControlStrategy extends BaseStrategy {
@@ -68,13 +71,13 @@ class RenderStrategy extends BaseStrategy {
 
   constructor(request, config) {
     super(request, config);
-    this.transforms = [];
+    this.#transforms = [];
   };
 
   doAddTransform(selector, callback) {
     // Add a transform to the list of transforms.
     const handler = new ElementHandler(callback);
-    this.transforms.push([selector, handler]);
+    this.#transforms.push([selector, handler]);
   };
 
   async doTransform(fragmentElement) {
@@ -82,7 +85,7 @@ class RenderStrategy extends BaseStrategy {
 
     // Manually iterate through the transforms
     await Promise.all(
-      this.transforms.map(
+      this.#transforms.map(
         ([selector, handler]) => Promise.all(
           // Get matching elements
           [...fragmentElement.querySelectorAll(`:scope ${selector}`)]
@@ -92,19 +95,21 @@ class RenderStrategy extends BaseStrategy {
       )
     );
   };
+
+  #transforms;
 };
 
 export class Runtime {
   constructor(config) {
-    this.config = config;
+    this.#config = config;
   }
 
   async control(fn, request, loader) {
     // Run the control hook.
 
     // Generate APIs
-    const strategy = new ControlStrategy(request, this.config);
-    const $ = new Control$(request, loader, this.config, strategy);
+    const strategy = new ControlStrategy(request, this.#config);
+    const $ = new Control$(request, this.#config, strategy, loader);
 
     // Run the JS
     await fn($);
@@ -114,8 +119,8 @@ export class Runtime {
     // Run the render hook.
 
     // Generate APIs
-    const strategy = new RenderStrategy(request, this.config);
-    const $ = new Render$(request, loader, this.config, strategy, data);
+    const strategy = new RenderStrategy(request, this.#config);
+    const $ = new Render$(request, this.#config, strategy, data);
 
     // Run the JS
     await fn($);
@@ -123,4 +128,6 @@ export class Runtime {
     // Transform the DOM
     return $._transform(fragmentElement);
   };
+
+  #config;
 };

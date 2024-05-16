@@ -21,8 +21,9 @@ export class ServerLoader {
     // Hook loader for loading fragments that are not already partially loaded on the client.
     // Defers to the server.
   
-    constructor(fragments) {
-      this.fragments = fragments;
+    constructor(fragments, config) {
+      this.#fragments = fragments;
+      this.#config = config;
     };
   
     async control(fragment, request) {
@@ -111,7 +112,7 @@ export class ServerLoader {
       const fragmentPromises = [];
   
       // Update the cache
-      for (const [fragment, importer] of this.fragments) {
+      for (const [fragment, importer] of this.#fragments) {
         if (currentFragments.has(fragment) && !fragmentCache.has(fragment)) {
           // Add to cache
   
@@ -127,4 +128,7 @@ export class ServerLoader {
   
       return Promise.all(fragmentPromises);
     };
+
+    #config;
+    #fragments;
   };

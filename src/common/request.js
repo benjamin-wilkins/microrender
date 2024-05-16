@@ -32,13 +32,11 @@ export class MicroRenderRequest {
     // Store geolocation on the request
     this.geolocation = geolocation;
 
-    // Include `formData` as an object as opposed to an async function, and make it non-enumerable
-    // to avoid large HTTP headers (formData should be transmitted in the HTTP body as for a normal
-    // request, and is not available on `microrender-timeout` requests).
-    Object.defineProperty(this, "formData", {value: formData, writable: true, enumerable: false});
-
-    // Ensure `env` and `redirector` are non-enumerable so it is not serialised
+    // Ensure `env` is non-enumerable so it is not serialised
     Object.defineProperty(this, "env", {value: env});
+
+    // Ensure `formData` is not serialised as it's inefficient
+    Object.defineProperty(this, "formData", {value: formData});
 
     // Parse the 'Cookie' header
     this.cookies = cookies ?
@@ -122,12 +120,5 @@ export class MicroRenderRequest {
     };
   };
 
-  // Ensure formData is null by default
-  get formData() {
-    return this._formData || null
-  };
-
-  set formData(value) {
-    this._formData = value
-  };
+  formData = null;
 };

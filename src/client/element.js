@@ -103,15 +103,19 @@ class Element {
       this.domElement.value= value;
     };
   };
+
+  domElement;
 };
 
 export class ElementHandler {
   constructor(callback) {
-    this.callback = callback;
+    this.#callback = callback;
   };
 
   async element (domElement) {
     const element = new Element(domElement);
-    await this.callback(element);
+    await this.#callback(element);
   };
+
+  #callback;
 };

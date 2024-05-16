@@ -17,26 +17,29 @@
 export class Redirect extends Error {
   constructor(location, status=302) {
     super();
-    this.location = location;
-    this.status = status;
+    this.#location = location;
+    this.#status = status;
   };
 
   catch = (loader, request) => {
-    return request.redirect(loader, this.location, this.status);
+    return request.redirect(loader, this.#location, this.#status);
   };
 
   name = "Response";
+  #location;
+  #status;
 };
 
 export class HTTPError extends Error {
   constructor(status) {
     super();
-    this.status = status;
+    this.#status = status;
   };
 
   catch = (loader, request) => {
-    return request.error(loader, this.status);
+    return request.error(loader, this.#status);
   };
 
   name = "HTTPError";
+  #status;
 };

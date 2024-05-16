@@ -22,14 +22,16 @@ import { FragmentRequest } from "./fragmentRequest.js";
 class FinishingTouches {
   // Adds final modifiations before the HTML is streamed to the client.
   constructor(config) {
-    this.config = config;
+    this.#config = config;
   }
 
   async comments (comment) {
-    if (this.config.stripComments) {
+    if (this.#config.stripComments) {
       comment.remove();
     };
   };
+
+  #config;
 };
 
 function getLocation(jsRequest) {
@@ -54,11 +56,11 @@ export class RequestHandler {
   // Request handler that can be called by cloudflare pages.
 
   constructor(loader, config) {
-    this.loader = loader;
-    this.config = config;
+    this.#loader = loader;
+    this.#config = config;
 
     // Initialise finishing touches
-    this.finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches(config));
+    this.#finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches(this.#config));
   };
 
   async fetch(jsRequest, env) {
@@ -109,16 +111,20 @@ export class RequestHandler {
       );
     };
 
-    return this.finishingTouches.transform(
+    return this.#finishingTouches.transform(
       await tryCatchAsync(
         // Pass control to the request to handle itself
-        () => request.handle(this.loader),
+        () => request.handle(this.#loader),
         // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
-        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.loader, request)
+        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
       ).catch(
         // Retry limit exceeded
         () => new Response("500 Internal Server Error", {status: 500})
       )
     );
   };
+
+  #config;
+  #finishingTouches;
+  #loader;
 };

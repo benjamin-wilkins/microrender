@@ -22,48 +22,48 @@ export class RequestHandler {
   // Request handler that can be called on browsers.
 
   constructor(loader, config) {
-    this.loader = loader;
-    this.config = config;
+    this.#loader = loader;
+    this.#config = config;
 
     // Parse the initial request and save it as the most recent to allow timeouts
-    this.lastRequest = MicroRenderRequest.deserialise(
+    this.#lastRequest = MicroRenderRequest.deserialise(
       document.querySelector("script#__microrender_initial-request").textContent
     );
 
     // Get the geolocation data from the last request
-    this.geolocation = this.lastRequest.geolocation;
+    this.#geolocation = this.#lastRequest.geolocation;
   };
 
   async fetch(jsRequest) {
     // Handle incoming HTTP requests.
 
     // Add preLoadJS to the event loop to run after this
-    setTimeout(() => this.loader.preLoadJS);
+    setTimeout(() => this.#loader.preLoadJS);
 
     // Create a MicroRenderRequest object and call its handler
     const request = await MicroRenderRequest.read(
       jsRequest,
       {
         cookies: document.cookie,
-        geolocation: this.geolocation
+        geolocation: this.#geolocation
       }
     );
     
     const response = await tryCatchAsync(
       // Pass control to the request to handle itself
-      () => request.handle(this.loader),
+      () => request.handle(this.#loader),
       // If e has a `catch` method, call it. Otherwise, create an HTTPError after logging the error
-      (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.loader, request)
+      (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
     ).catch(
       // Retry limit exceeded
       () => document.documentElement.innerText = "500 Internal Server Error"
     );
 
     // Store the last request to allow timeouts
-    this.lastRequest = request;
+    this.#lastRequest = request;
 
     // Remove `formData` from the request so it cannot be called by a timeout.
-    this.lastRequest.formData = null;
+    this.#lastRequest.formData = null;
 
     if (response && response.status) {
       // Further action may be required
@@ -85,12 +85,17 @@ export class RequestHandler {
 
           // Update request URL and retry request
           request.url = new URL(location, response.headers.get("Location"));
-          request.handle(this.loader);
+          request.handle(this.#loader);
       };
     };
   };
 
   async update(fragment, fragmentElement) {
-    return this.loader.render(fragment, this.lastRequest, {fragmentElement});
+    return this.#loader.render(fragment, this.#lastRequest, {fragmentElement});
   };
+
+  #config;
+  #geolocation;
+  #lastRequest;
+  #loader;
 };

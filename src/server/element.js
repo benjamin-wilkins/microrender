@@ -137,15 +137,19 @@ class Element {
       this.attr("value", value);
     };
   };
+
+  rewriterElement;
 };
 
 export class ElementHandler {
   constructor(callback) {
-    this.callback = callback;
+    this.#callback = callback;
   };
 
   async element (rewriterElement) {
     const element = new Element(rewriterElement);
-    await this.callback(element);
+    await this.#callback(element);
   };
+
+  #callback;
 };

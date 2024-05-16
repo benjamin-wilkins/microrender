@@ -27,7 +27,7 @@ export function MicroRenderFragment(requestHandler) {
 
     constructor() {
       super();
-      this._internals = this.attachInternals();
+      this.#internals = this.attachInternals();
     };
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -54,10 +54,10 @@ export function MicroRenderFragment(requestHandler) {
           if (oldInterval != newInterval) {
 
             // Remove old interval
-            if (this.interval_) clearInterval(this.interval_);
+            if (this.#interval) clearInterval(this.#interval);
 
             // Add new interval
-            this.interval_ = setInterval(
+            this.#interval = setInterval(
               () => requestHandler.update(this.getAttribute("name"), this),
               parseInterval(this.getAttribute("microrender-timeout"))
             );
@@ -69,8 +69,8 @@ export function MicroRenderFragment(requestHandler) {
       // Get whether the fragment needs refetching based on the element `:state` or CSS class if
       // `:state` is unavailable.
 
-      if (this._internals.states) {
-        return this._internals.states.has("--requires-fetch");
+      if (this.#internals.states) {
+        return this.#internals.states.has("--requires-fetch");
       } else {
         return this.classList.contains("state--requires-fetch");
       };
@@ -85,18 +85,21 @@ export function MicroRenderFragment(requestHandler) {
       // `microrender-fragment:where(:state(--requires-fetch), .state--requires-fetch)`
 
       if (flag) {
-        if (this._internals.states) {
-          this._internals.states.add("--requires-fetch");
+        if (this.#internals.states) {
+          this.#internals.states.add("--requires-fetch");
         } else {
           this.classList.add("state--requires-fetch");
         };
       } else {
-        if (this._internals.states) {
-          this._internals.states.delete("--requires-fetch");
+        if (this.#internals.states) {
+          this.#internals.states.delete("--requires-fetch");
         } else {
           this.classList.remove("state--requires-fetch");
         };
       };
     };
+
+    #internals;
+    #interval;
   };
 };

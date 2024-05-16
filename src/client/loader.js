@@ -21,31 +21,31 @@ export class Loader {
   // Hook loader passed to MicroRenderRequest.handle().
 
   constructor(runtime, fragments, config) {
-    this.runtime = runtime;
-    this.config = config;
+    this.#runtime = runtime;
+    this.#config = config;
 
     // Only store already-loaded fragments here
-    this.fragments = new Map;
+    this.#fragments = new Map;
 
     // Get not-already-loaded fragments from the server
-    this.server = new ServerLoader(fragments);
+    this.#server = new ServerLoader(fragments, config);
   };
 
   async control(fragment, request) {
     // Load a fragment's control hook.
 
     // Run the control hook on the server if it is not cached locally
-    if (!this.fragments.has(fragment)) {
-      await this.server.control(fragment, request)
+    if (!this.#fragments.has(fragment)) {
+      await this.#server.control(fragment, request)
       return;
     };
 
     // Get the fragment JS
-    const fragmentJS = this.fragments.get(fragment);
+    const fragmentJS = this.#fragments.get(fragment);
 
     if (fragmentJS?.control) {
       // Run the control hook
-      await this.runtime.control(fragmentJS.control, request, this)
+      await this.#runtime.control(fragmentJS.control, request, this)
     };
   };
 
@@ -66,21 +66,21 @@ export class Loader {
 
     // Run the render hook on the server if it is not cached locally or if the fragment has been
     // changed (ie. its HTML needs reloading)
-    if (!this.fragments.has(fragment) || fragmentElement.requiresFetch) {
-      await this.server.render(fragment, request, {data, fragmentElement});
+    if (!this.#fragments.has(fragment) || fragmentElement.requiresFetch) {
+      await this.#server.render(fragment, request, {data, fragmentElement});
       return;
     };
 
     // Get the fragment JS
-    const fragmentJS = this.fragments.get(fragment);
+    const fragmentJS = this.#fragments.get(fragment);
 
     if (fragmentJS?.render) {
       // Run the render hook
-      await this.runtime.render(fragmentJS.render, request, this, data, {fragmentElement});
+      await this.#runtime.render(fragmentJS.render, request, this, data, {fragmentElement});
     };
 
     // Load child fragments
-    await this.runtime.render(($) => {
+    await this.#runtime.render(($) => {
       $("microrender-fragment", async (elmt) => {
         // Get fragment info
         const name = elmt.attr("name");
@@ -92,6 +92,11 @@ export class Loader {
   };
 
   preLoadJS() {
-    return this.server.preLoadJS(this.fragments);
+    return this.#server.preLoadJS(this.#fragments);
   };
+
+  #config;
+  #fragments;
+  #runtime;
+  #server;
 };

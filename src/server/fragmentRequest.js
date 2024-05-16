@@ -23,14 +23,14 @@ export class FragmentRequest {
 
   constructor(request, httpUrl, {env, data=new Map}) {
     // The underlying MicroRenderRequest for this FragmentRequest
-    this.request = request;
+    this.#request = request;
 
     // Use the URL API instead of just strings
     httpUrl = new URL(httpUrl);
 
     // Parse the httpUrl to get the fragment and hook
-    this.fragment = httpUrl.pathname.split("/")[2];
-    this.hook = httpUrl.pathname.split("/")[3];
+    this.#fragment = httpUrl.pathname.split("/")[2];
+    this.#hook = httpUrl.pathname.split("/")[3];
 
     // The `data-*` attributes for the fragment being requested
     this.data = data;
@@ -61,16 +61,16 @@ export class FragmentRequest {
 
   serialise() {
     // Serialise the underlying MicroRenderRequest object.
-    return this.request.serialise();
+    return this.#request.serialise();
   };
 
   async handle(loader) {
     // Handle the request.
 
-    switch (this.hook) {
+    switch (this.#hook) {
       case "control":
         // Run the control hook
-        const headers = await loader.control(this.fragment, this)
+        const headers = await loader.control(this.#fragment, this)
 
         // Serialise the request data to be sent back to the client
         headers.set("MicroRender-Request", this.serialise());
@@ -78,7 +78,7 @@ export class FragmentRequest {
         return new Response(null, {headers});
       case "render":
         // Run the render hook
-        const response = await loader.render(this.fragment, this, {data: this.data});
+        const response = await loader.render(this.#fragment, this, {data: this.data});
 
         return response;
       default:
@@ -109,24 +109,28 @@ export class FragmentRequest {
   };
 
   // Proxy properties to this.request
-  get url() {return this.request.url};
-  set url(value) {this.request.url = value};
+  get url() {return this.#request.url};
+  set url(value) {this.#request.url = value};
 
-  get status() {return this.request.status};
-  set status(value) {this.request.status = value};
+  get status() {return this.#request.status};
+  set status(value) {this.#request.status = value};
 
-  get title() {return this.request.title};
-  set title(value) {this.request.title = value};
+  get title() {return this.#request.title};
+  set title(value) {this.#request.title = value};
 
-  get description() {return this.request.description};
-  set description(value) {this.request.description = value};
+  get description() {return this.#request.description};
+  set description(value) {this.#request.description = value};
 
-  get cookies() {return this.request.cookies};
-  set cookies(value) {this.request.cookies = value};
+  get cookies() {return this.#request.cookies};
+  set cookies(value) {this.#request.cookies = value};
 
-  get formData() {return this.request.formData};
-  set formData(value) {this.request.formData = value};
+  get formData() {return this.#request.formData};
+  set formData(value) {this.#request.formData = value};
 
-  get geolocation() {return this.request.geolocation};
-  set geolocation(value) {this.request.geolocation = value};
+  get geolocation() {return this.#request.geolocation};
+  set geolocation(value) {this.#request.geolocation = value};
+
+  #fragment;
+  #hook;
+  #request;
 };
