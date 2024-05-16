@@ -21,7 +21,7 @@ class Element {
   // DOM APIs.
 
   constructor(rewriterElement) {
-    this.rewriterElement = rewriterElement
+    this.#rewriterElement = rewriterElement
   };
 
   attr = (attr, value) => {
@@ -29,13 +29,13 @@ class Element {
 
     if (typeof value == "undefined") {
       // Only attr argument given
-      return this.rewriterElement.getAttribute(attr);
+      return this.#rewriterElement.getAttribute(attr);
 
     } else if (value == false) {
-      this.rewriterElement.removeAttribute(attr);
+      this.#rewriterElement.removeAttribute(attr);
 
     } else {
-      this.rewriterElement.setAttribute(attr, value);
+      this.#rewriterElement.setAttribute(attr, value);
     };
   };
 
@@ -51,16 +51,16 @@ class Element {
 
     } else {
       // Only attr value given
-      return this.rewriterElement.hasAttribute(attr);
+      return this.#rewriterElement.hasAttribute(attr);
     };
   };
 
   html = (content) => {
-    this.rewriterElement.setInnerContent(content, {html: true});
+    this.#rewriterElement.setInnerContent(content, {html: true});
   };
 
   text = (content) => {
-    this.rewriterElement.setInnerContent(content, {html: false});
+    this.#rewriterElement.setInnerContent(content, {html: false});
   };
 
   style = (property, value) => {
@@ -138,7 +138,12 @@ class Element {
     };
   };
 
-  rewriterElement;
+  // Wrap private member that can be safely minified
+  get rewriterElement() {
+    return this.#rewriterElement;
+  };
+
+  #rewriterElement;
 };
 
 export class ElementHandler {

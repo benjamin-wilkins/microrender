@@ -18,7 +18,7 @@ class Element {
   // Wrapper for DOM Element APIs.
 
   constructor(domElement) {
-    this.domElement = domElement;
+    this.#domElement = domElement;
   };
 
   attr = (attr, value) => {
@@ -26,13 +26,13 @@ class Element {
 
     if (typeof value == "undefined") {
       // Only attr argument given
-      return this.domElement.getAttribute(attr);
+      return this.#domElement.getAttribute(attr);
 
     } else if (value == false) {
-      this.domElement.removeAttribute(attr);
+      this.#domElement.removeAttribute(attr);
 
     } else {
-      this.domElement.setAttribute(attr, value);
+      this.#domElement.setAttribute(attr, value);
     };
   };
 
@@ -41,23 +41,23 @@ class Element {
     // original state of the DOM so updating them with `.attr()` does nothing.
 
     if (value == true) {
-      this.domElement[attr] = true;
+      this.#domElement[attr] = true;
 
     } else if (value == false) {
-      this.domElement[attr] = false;
+      this.#domElement[attr] = false;
 
     } else {
       // Only attr value given
-      return this.domElement[attr];
+      return this.#domElement[attr];
     };
   };
 
   html = (content) => {
-    this.domElement.innerHTML = content;
+    this.#domElement.innerHTML = content;
   };
 
   text = (content) => {
-    this.domElement.textContent = content;
+    this.#domElement.textContent = content;
   };
 
   style = (property, value) => {
@@ -67,10 +67,10 @@ class Element {
       // Only one argument given.
 
       // Gets style from the style property, not computed styles, so that it matches the server.
-      return this.domElement.style.getPropertyValue(property);
+      return this.#domElement.style.getPropertyValue(property);
 
     } else {
-      this.domElement.style.setProperty(property, value);
+      this.#domElement.style.setProperty(property, value);
     };
   };
 
@@ -78,18 +78,18 @@ class Element {
     // Get and modify classes in the HTML `class` attribute. 
 
     if (typeof value == "undefined") {
-      return this.domElement.classList.contains($class);
+      return this.#domElement.classList.contains($class);
     } else {
       if (value) {
-        this.domElement.classList.add($class);
+        this.#domElement.classList.add($class);
       } else {
-        this.domElement.classList.remove($class);
+        this.#domElement.classList.remove($class);
       };
     };
   };
 
   toggleClass = ($class) => {
-    this.domElement.classList.toggle($class);
+    this.#domElement.classList.toggle($class);
   };
 
   value = (value) => {
@@ -97,14 +97,19 @@ class Element {
 
     if (typeof value == "undefined") {
       // No arguments given
-      return this.domElement.value;
+      return this.#domElement.value;
       
     } else {
-      this.domElement.value= value;
+      this.#domElement.value= value;
     };
   };
 
-  domElement;
+  // Wrap private member that can be safely minified
+  get domElement() {
+    return this.#domElement;
+  };
+
+  #domElement;
 };
 
 export class ElementHandler {
