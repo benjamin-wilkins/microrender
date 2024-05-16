@@ -56,11 +56,11 @@ class Element {
     this.#domElement.innerHTML = content;
   };
 
-  text = (content) => {
+  text(content) {
     this.#domElement.textContent = content;
   };
 
-  style = (property, value) => {
+  style(property, value) {
     // Get and set CSS rules in the HTML `style` attribute.
 
     if (typeof value == "undefined") {
