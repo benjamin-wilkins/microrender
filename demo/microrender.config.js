@@ -21,18 +21,15 @@
 
 export const local = {
   stripComments: false,
-  sourceMap: true,
-  minify: false
+  sourceMap: true
 };
 
 export const staging = {
   stripComments: true,
-  sourceMap: false,
-  minify: true
+  sourceMap: false
 };
 
 export const production = {
   stripComments: true,
-  sourceMap: false,
-  minify: true
+  sourceMap: false
 };

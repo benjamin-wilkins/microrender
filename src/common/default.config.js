@@ -6,5 +6,5 @@ export default {
   plugins: [],
   stripComments: false,
   sourceMap: false,
-  minify: false
+  minify: true
 };
