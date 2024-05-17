@@ -21,25 +21,27 @@ class Base$ extends ExtendableFunction {
   // Global MicroRender APIs common to all hooks.
   // Contains runtime-independent methods and delegates to `strategy` for runtime-specific methods.
 
-  constructor(request, loader, config, strategy) {
+  constructor(request, strategy) {
     super();
 
-    // Use _ for internal properties as $ gets passed to user code
-    this._request = request;
-    this._loader = loader;
-    this._config = config;
-    this._strategy = strategy;
+    this.#request = request;
+    this.#strategy = strategy;
   };
 
   _call() {
     throw new TypeError("This $ has no selector API");
   };
 
+  _reqString() {
+    // Return a serialised copy of `this.#request`, primarily for the microrender:js fragment
+    return this.#request.serialise();
+  };
+
   fetch(resource, options) {
     // Custom fetcher - supports binding: urls.
 
     // Get the URL from the resource
-    const url = new URL(resource instanceof Request ? resource.url : resource.toString(), this._request.url);
+    const url = new URL(resource instanceof Request ? resource.url : resource.toString(), this.#request.url);
 
     if (url.protocol == "binding:") {
       // Request the binding from the server
@@ -48,10 +50,6 @@ class Base$ extends ExtendableFunction {
       const binding = url.pathname.split("/")[0];
       const path = url.pathname.split("/").slice(1);
 
-      if (!this._config.bindings.includes(binding)) {
-        throw new TypeError("Unrecognised binding");
-      };
-
       // Build the new URL for the binding
       const bindingUrl = new URL(`https://${binding}`);
       bindingUrl.pathname = path;
@@ -59,7 +57,7 @@ class Base$ extends ExtendableFunction {
       bindingUrl.hash = url.hash;
 
       // Fetch using runtime-specific fetcher
-      return this._strategy.doBindingFetch(binding, bindingUrl, resource, options);
+      return this.#strategy.doBindingFetch(binding, bindingUrl, resource, options);
     };
 
     // Normal fetch request
@@ -73,24 +71,24 @@ class Base$ extends ExtendableFunction {
     // Compatiable with the `$.search()` API, but handles POST not GET.
 
     // Always return `null` from non-form POST requests
-    if (!this._request.formData) return null;
+    if (!this.#request.formData) return null;
 
     if (typeof field == "undefined") {
       // Is the request a form POST request?
       return true;
     };
 
-    return this._request.formData.get(field);
+    return this.#request.formData.get(field);
   };
 
   url() {
     // Get the URL.
-    return this._request.url;
+    return this.#request.url;
   };
 
   path() {
     // Get the URL path.
-    return this._request.url.pathname;
+    return this.#request.url.pathname;
   };
 
   search(field) {
@@ -100,46 +98,45 @@ class Base$ extends ExtendableFunction {
     // Compatiable with the `$.form()` API, but handles GET not POST.
 
     // Always return `null` if no query params
-    if (!this._request.url.search) return null;
+    if (!this.#request.url.search) return null;
 
     if (typeof field == "undefined") {
       // Is the request a form GET request?
       return true;
     };
 
-    return this._request.url.searchParams.get(field);
+    return this.#request.url.searchParams.get(field);
   };
 
   error() {
     // Get the HTTP status code to be returned.
-    return this._request.status;
+    return this.#request.status;
   };
 
   cookie(name) {
     // Read a cookie.
-    return this._request.cookies.get(name);
+    return this.#request.cookies.get(name);
   };
 
   title() {
     // Get the page title.
-    return this._request.title;
+    return this.#request.title;
   };
 
   desc() {
     // Get the page description.
-    return this._request.description;
+    return this.#request.description;
   };
 
   loc() {
     // Get an object of location data.
-    return this._request.geolocation.loc();
+    return this.#request.geolocation.point;
   };
 
   async relocate() {
     // Make a geolocation request to update the user's position.
 
-    const newLocation = await this._strategy.doUpdateGeoLocation();
-    Object.assign(this._request.geolocation, newLocation);
+    this.#request.geolocation = await this.#strategy.doUpdateGeoLocation();
 
     // Return the new location data
     return this.loc();
@@ -147,24 +144,34 @@ class Base$ extends ExtendableFunction {
 
   tz() {
     // Get the user timezone.
-    return this._request.geolocation.tz;
+    return this.#request.geolocation.tz;
   };
 
   lang() {
     // Get the user's preferred languages. Returns an array.
-    return this._request.geolocation.lang;
+    return this.#request.geolocation.lang;
   };
+
+  #request;
+  #strategy;
 };
 
 export class Control$ extends Base$ {
   // MicroRender control APIs
+  constructor(request, strategy, loader) {
+    super(request, strategy);
+
+    this.#request = request;
+    this.#strategy = strategy;
+    this.#loader = loader;
+  }
 
   url(newUrl, status=302) {
     // Get / set (redirect) the URL.
 
     if (typeof newUrl != "undefined") {
       // Get full URL using URL API
-      newUrl = new URL(newUrl, this._request.url);
+      newUrl = new URL(newUrl, this.#request.url);
 
       // Redirect the user
       throw new Redirect(newUrl, status);
@@ -205,10 +212,10 @@ export class Control$ extends Base$ {
       options.path = "/";
 
       // Serialise cookie into runtime-specific setter
-      this._strategy.doSetCookie(getCookieString(name, value, options));
+      this.#strategy.doSetCookie(getCookieString(name, value, options));
 
       // Set the cookie in the cookies Map so it can be accessed without parsing headers.
-      this._request.cookies.set(name, value.toString());
+      this.#request.cookies.set(name, value.toString());
       return;
     };
 
@@ -220,7 +227,7 @@ export class Control$ extends Base$ {
     // Doesn't actually modify the title - intended to be embedded in a <title> tag or elsewhere.
     
     if (typeof title != "undefined") {
-      this._request.title = title;
+      this.#request.title = title;
       return;
     };
 
@@ -232,7 +239,7 @@ export class Control$ extends Base$ {
     // Doesn't actually modify the description - intended to be embedded in a <meta> tag or elsewhere.
     
     if (typeof desc != "undefined") {
-      this._request.desc = desc;
+      this.#request.desc = desc;
       return;
     };
 
@@ -242,35 +249,44 @@ export class Control$ extends Base$ {
   async pass(fragment) {
     // Run another fragment's control hook.
 
-    await this._loader.control(fragment, this._request);
+    await this.#loader.control(fragment, this.#request);
   };
+
+  #loader;
+  #request;
+  #strategy;
 };
 
 export class Render$ extends Base$ {
   // MicroRender render APIs
 
-  constructor(request, loader, config, strategy, data) {
-    super(request, loader, config, strategy);
-    this._data = data;
+  constructor(request, strategy, data) {
+    super(request, strategy);
+
+    this.#data = data;
+    this.#strategy = strategy;
   };
 
   _call(selector, callback) {
     // JQuery-like selector function. Runs `callback` for every element that matches the selector.
 
     // Delegate to runtime-specific strategy
-    this._strategy.doAddTransform(selector, callback);
+    this.#strategy.doAddTransform(selector, callback);
   };
 
   _transform(target) {
     // Do all the element transforms defined by the fragment.
 
-    return this._strategy.doTransform(target);
+    return this.#strategy.doTransform(target);
   };
 
   data(attr) {
     // Get data-* attributes set on the fragment element. The `data-*` is automatically added to
     // the attribute name, but no kebab-case to camelCase conversion occurs.
 
-    return this._data.get(attr);
+    return this.#data.get(attr);
   };
+
+  #data;
+  #strategy;
 };

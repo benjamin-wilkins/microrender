@@ -18,19 +18,16 @@ import { RequestHandler } from "./handleRequest.js";
 import { Loader } from "./loader.js";
 import { Runtime } from "./runtime.js";
 
-export function init(fragments, config) {
+export function init(fragments) {
   // Initialise the MicroRender server on Cloudflare Pages.
 
   // Initialise each component
-  const runtime = new Runtime(config);
-  const loader = new Loader(runtime, fragments, config);
-  const requestHandler = new RequestHandler(loader, config);
+  const runtime = new Runtime();
+  const loader = new Loader(runtime, fragments);
+  const requestHandler = new RequestHandler(loader);
 
   // NOTE: cloudflare workers does not currently search the prototype chain for request handlers, so
   // it's necessary wrap it. This issue is being tracked by cloudflare - when this is fixed the
-  // following line should be removed.
-  requestHandler.fetch = requestHandler.fetch;
-
-  // Can be called by cloudflare pages
-  return requestHandler;
+  // following line should be amended.
+  return {fetch: (...args) => requestHandler.fetch(...args)};
 };

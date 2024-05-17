@@ -18,139 +18,109 @@ class Element {
   // Wrapper for DOM Element APIs.
 
   constructor(domElement) {
-    this.domElement = domElement;
+    this.#domElement = domElement;
   };
 
-  getAttribute = (attr) => {
-    return this.domElement.getAttribute(attr)
-  };
-
-  hasAttribute = (attr) => {
-    return this.domElement.hasAttribute(attr)
-  };
-
-  setAttribute = (attr, value) => {
-    this.domElement.setAttribute(attr, value)
-  };
-
-  removeAttribute = (attr) => {
-    this.domElement.removeAttribute(attr)
-  };
-
-  attr = (attr, value) => {
-    // Shorthand for other *Attribute functions.
+  attr(attr, value) {
+    // Get / set HTML attributes
 
     if (typeof value == "undefined") {
       // Only attr argument given
-      return this.getAttribute(attr);
+      return this.#domElement.getAttribute(attr);
 
     } else if (value == false) {
-      this.removeAttribute(attr);
+      this.#domElement.removeAttribute(attr);
 
     } else {
-      this.setAttribute(attr, value);
+      this.#domElement.setAttribute(attr, value);
     };
   };
 
-  boolean = (attr, value) => {
-    // Simplifies working with boolean attributes as HTML boolean
-    // attributes only affect the original state of the DOM so
-    // updating them with setAttribute() does nothing.
+  boolean(attr, value) {
+    // Simplifies working with boolean attributes as HTML boolean attributes only affect the
+    // original state of the DOM so updating them with `.attr()` does nothing.
 
     if (value == true) {
-      this.domElement[attr] = true;
+      this.#domElement[attr] = true;
 
     } else if (value == false) {
-      this.domElement[attr] = false;
+      this.#domElement[attr] = false;
 
     } else {
       // Only attr value given
-      return this.domElement[attr];
+      return this.#domElement[attr];
     };
   };
 
-  html = (content) => {
-    this.domElement.innerHTML = content;
+  html(content) {
+    this.#domElement.innerHTML = content;
   };
 
-  text = (content) => {
-    this.domElement.textContent = content;
+  text(content) {
+    this.#domElement.textContent = content;
   };
 
-  getStyle = (property) => {
-    // Gets style from the style property, not computed styles,
-    // in order to match server.
-
-    return this.domElement.style.getPropertyValue(property);
-  };
-
-  setStyle = (property, value) => {
-    this.domElement.style.setProperty(property, value);
-  };
-
-  removeStyle = (property) => {
-    this.setStyle(property, "")
-  };
-
-  style = (property, value) => {
-    // Shorthand for other *Style functions.
+  style(property, value) {
+    // Get and set CSS rules in the HTML `style` attribute.
 
     if (typeof value == "undefined") {
       // Only one argument given.
-      return this.getStyle(property);
+
+      // Gets style from the style property, not computed styles, so that it matches the server.
+      return this.#domElement.style.getPropertyValue(property);
 
     } else {
-      this.setStyle(property, value);
+      this.#domElement.style.setProperty(property, value);
     };
   };
 
-  getClass = ($class) => {
-    return this.domElement.classList.contains($class);
-  };
-
-  setClass = ($class, value) => {
-    if (value == true) {
-      this.domElement.classList.add($class);
-    } else if (value == false) {
-      this.domElement.classList.remove($class);
-    };
-  };
-
-  toggleClass = ($class) => {
-    this.domElement.classList.toggle($class);
-  };
-
-  class = ($class, value) => {
-    // Shorthand for other *Class functions.
+  class($class, value) {
+    // Get and modify classes in the HTML `class` attribute. 
 
     if (typeof value == "undefined") {
-      return this.getClass($class);
+      return this.#domElement.classList.contains($class);
     } else {
-      this.setClass($class, value);
+      if (value) {
+        this.#domElement.classList.add($class);
+      } else {
+        this.#domElement.classList.remove($class);
+      };
     };
   };
 
-  value = (value) => {
-    // Wrapper around value property as HTML attribute value only
-    // affects the initial valuue.
+  toggleClass($class) {
+    this.#domElement.classList.toggle($class);
+  };
+
+  value(value) {
+    // Wrapper around value property as HTML attribute value only  affects the initial value.
 
     if (typeof value == "undefined") {
       // No arguments given
-      return this.domElement.value;
+      return this.#domElement.value;
       
     } else {
-      this.domElement.value= value;
+      this.#domElement.value= value;
     };
   };
+
+  // Wrap private member that can be safely minified
+  get domElement() {
+    return this.#domElement;
+  };
+
+  #domElement;
 };
 
 export class ElementHandler {
   constructor(callback) {
-    this.callback = callback;
+    this.#callback = callback;
   };
 
   async element (domElement) {
     const element = new Element(domElement);
-    await this.callback(element);
+    await this.#callback(element);
   };
+
+  #callback;
 };

@@ -18,7 +18,7 @@ export class MicroRenderGlobal {
   // Global `microrender` object for calling MicroRender from external code.
 
   constructor(requestHandler) {
-    this._requestHandler = requestHandler;
+    this.#requestHandler = requestHandler;
   };
 
   navigate(resource) {
@@ -27,9 +27,11 @@ export class MicroRenderGlobal {
     const request = new Request(resource);
 
     // Add history entry
-    window.history.pushState(null, "", request.url);
+    history.pushState(null, "", request.url);
 
     // Get the new page
-    this._requestHandler.fetch(request);
+    this.#requestHandler.fetch(request);
   };
+
+  #requestHandler;
 };

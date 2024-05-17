@@ -20,22 +20,16 @@
 // Run locally using `npx wrangler pages dev demo/build --port 8788 --service backend=demo-backend`
 
 export const local = {
-  bindings: ["backend"],
   stripComments: false,
-  sourceMap: true,
-  minify: false
+  sourceMap: true
 };
 
 export const staging = {
-  bindings: ["backend"],
   stripComments: true,
-  sourceMap: false,
-  minify: true
+  sourceMap: false
 };
 
 export const production = {
-  bindings: ["backend"],
   stripComments: true,
-  sourceMap: false,
-  minify: true
+  sourceMap: false
 };

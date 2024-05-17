@@ -19,22 +19,21 @@ import { getData } from "../common/helpers.js";
 export class Loader {
   // Hook loader passed to *Request.handle().
 
-  constructor(runtime, fragments, config) {
-    this.runtime = runtime;
-    this.fragments = fragments;
-    this.config = config;
+  constructor(runtime, fragments) {
+    this.#runtime = runtime;
+    this.#fragments = fragments;
   };
 
   async control(fragment, request, {headers=new Headers}={}) {
     // Load a fragment's control hook.
 
     // Get the fragment JS
-    const fragmentJS = this.fragments.get(fragment);
+    const fragmentJS = this.#fragments.get(fragment);
     
 
     if (fragmentJS?.control) {
       // Run the control hook
-      await this.runtime.control(fragmentJS.control, request, this, {headers});
+      await this.#runtime.control(fragmentJS.control, request, this, {headers});
     };
   
     return headers;
@@ -44,18 +43,18 @@ export class Loader {
     // Load the render hook for the fragment.
 
     // Get the fragment JS
-    const fragmentJS = this.fragments.get(fragment);
+    const fragmentJS = this.#fragments.get(fragment);
 
     // Get the fragment HTML from cloudflare pages
     let response = await request.env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
     if (fragmentJS.render) {
       // Run the render hook
-      response = await this.runtime.render(fragmentJS.render, request, this, data, {response});
+      response = await this.#runtime.render(fragmentJS.render, request, this, data, {response});
     };
 
     // Load child fragments
-    response = await this.runtime.render(($) => {
+    response = await this.#runtime.render(($) => {
       $("microrender-fragment", async (elmt) => {
         // Get fragment info
         const name = elmt.attr("name");
@@ -78,4 +77,7 @@ export class Loader {
 
     return response;
   };
+  
+  #fragments;
+  #runtime;
 };

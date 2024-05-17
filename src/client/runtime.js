@@ -16,16 +16,10 @@
 
 import { Control$, Render$ } from "../common/runtime.js";
 import { ElementHandler } from "../client/element.js";
-import { GeoLocation } from "../common/geolocation.js";
+import { deserialise } from "../common/helpers.js";
 
 class BaseStrategy {
   // Strategy passed to the $ constructor. Contains runtime-specific methods common to all hooks.
-
-  constructor(request, config) {
-    this.request = request;
-    this.config = config;
-  };
-
   doBindingFetch(binding, bindingUrl, resource, options) {
     // Fetch a binding from the server over HTTP.
 
@@ -50,7 +44,7 @@ class BaseStrategy {
 
     // Fetch a geolocation from the server
     const response = await fetch("/_location");
-    return GeoLocation.deserialise(await response.text());
+    return deserialise(await response.text());
   };
 };
 
@@ -66,15 +60,15 @@ class ControlStrategy extends BaseStrategy {
 class RenderStrategy extends BaseStrategy {
   // Strategy passed to the $ constructor. Contains runtime-specific methods for the `render` hook.
 
-  constructor(request, config) {
-    super(request, config);
-    this.transforms = [];
+  constructor() {
+    super();
+    this.#transforms = [];
   };
 
   doAddTransform(selector, callback) {
     // Add a transform to the list of transforms.
     const handler = new ElementHandler(callback);
-    this.transforms.push([selector, handler]);
+    this.#transforms.push([selector, handler]);
   };
 
   async doTransform(fragmentElement) {
@@ -82,7 +76,7 @@ class RenderStrategy extends BaseStrategy {
 
     // Manually iterate through the transforms
     await Promise.all(
-      this.transforms.map(
+      this.#transforms.map(
         ([selector, handler]) => Promise.all(
           // Get matching elements
           [...fragmentElement.querySelectorAll(`:scope ${selector}`)]
@@ -92,19 +86,17 @@ class RenderStrategy extends BaseStrategy {
       )
     );
   };
+
+  #transforms;
 };
 
 export class Runtime {
-  constructor(config) {
-    this.config = config;
-  }
-
   async control(fn, request, loader) {
     // Run the control hook.
 
     // Generate APIs
-    const strategy = new ControlStrategy(request, this.config);
-    const $ = new Control$(request, loader, this.config, strategy);
+    const strategy = new ControlStrategy;
+    const $ = new Control$(request, strategy, loader);
 
     // Run the JS
     await fn($);
@@ -114,8 +106,8 @@ export class Runtime {
     // Run the render hook.
 
     // Generate APIs
-    const strategy = new RenderStrategy(request, this.config);
-    const $ = new Render$(request, loader, this.config, strategy, data);
+    const strategy = new RenderStrategy;
+    const $ = new Render$(request, strategy, data);
 
     // Run the JS
     await fn($);

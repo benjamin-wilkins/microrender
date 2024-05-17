@@ -40,20 +40,11 @@ const cwd = process.cwd();
 const microrender_dir = path.dirname(fileURLToPath(import.meta.url));
 const build_dir = path.join(cwd, "build");
 const tmp_dir = path.join(cwd, "tmp");
-const configPath = path.join(cwd, "microrender.config.js");
 
-const config = Object.assign({}, defaultConfig, (await import(configPath))[env]);
+const config = Object.assign({}, defaultConfig, (await import(path.join(cwd, "microrender.config.js")))[env]);
 
 const serverImport = `import { init } from "${path.join(microrender_dir, "server/init.js")}";\n`;
 const browserImport = `import { init } from "${path.join(microrender_dir, "client/init.js")}";\n`;
-
-const configSetup = `
-import defaultConfig from "${path.join(microrender_dir, "./common/default.config.js")}";
-import {${env} as userConfig} from "${configPath}";
-
-const config = Object.assign({}, defaultConfig, userConfig);
-
-`
 
 const help = `
 Microrender builder
@@ -140,9 +131,8 @@ async function buildJS(fragments) {
     serverJS = await fs.open(path.join(tmp_dir, "server.js"), "w");
 
     await serverJS.write(serverImport);
-    await serverJS.write(configSetup);
     await addFragments(serverJS, fragments, "server");
-    await serverJS.write("export default init(fragments, config);")
+    await serverJS.write("export default init(fragments);")
   } finally {
     serverJS.close();
   };
@@ -151,33 +141,37 @@ async function buildJS(fragments) {
     browserJS = await fs.open(path.join(tmp_dir, "browser.js"), "w");
 
     await browserJS.write(browserImport);
-    await browserJS.write(configSetup);
     await addFragments(browserJS, fragments, "browser");
-    await browserJS.write("init(fragments, config);");
+    await browserJS.write("init(fragments);");
   } finally {
     browserJS.close();
   };
 
   await esbuild.build({
     entryPoints: [path.join(tmp_dir, "server.js")],
-    bundle: true,
     outfile: path.join(build_dir, "_worker.js"),
-    sourcemap: config.sourceMap,
+
+    bundle: true,
     format: "esm",
-    splitting: false,
+    keepNames: true,
     minify: config.minify,
-    keepNames: true
+    sourcemap: config.sourceMap,
+    splitting: false,
+    define: {
+      $STRIP_COMMENTS: `${config.stripComments}`
+    }
   });
 
   await esbuild.build({
     entryPoints: [path.join(tmp_dir, "browser.js")],
-    bundle: true,
     outdir: path.join(build_dir, "assets/microrender"),
-    sourcemap: config.sourceMap,
+
+    bundle: true,
     format: "esm",
-    splitting: true,
+    keepNames: true,
     minify: config.minify,
-    keepNames: true
+    sourcemap: config.sourceMap,
+    splitting: true
   });
 };
 

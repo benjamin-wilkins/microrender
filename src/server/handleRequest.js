@@ -15,49 +15,45 @@
 */
 
 import { HTTPError } from "../common/error.js";
-import { parseQ, tryCatchAsync } from "../common/helpers.js";
+import { parseQ, tryCatchAsync, serialise } from "../common/helpers.js";
 import { MicroRenderRequest } from "../common/request.js";
 import { FragmentRequest } from "./fragmentRequest.js";
-import { GeoLocation } from "../common/geolocation.js";
 
 class FinishingTouches {
   // Adds final modifiations before the HTML is streamed to the client.
-  constructor(config) {
-    this.config = config;
-  }
-
   async comments (comment) {
-    if (this.config.stripComments) {
+    if ($STRIP_COMMENTS) {
       comment.remove();
     };
   };
 };
 
-function createGeoLocation(jsRequest) {
+function getLocation(jsRequest) {
   // Create a geolocation object from the IP and datacentre location.
 
-  return new GeoLocation(
-    jsRequest.cf.continent,
-    jsRequest.cf.country,
-    jsRequest.cf.regionCode,
-    jsRequest.cf.city,
-    jsRequest.cf.postalCode,
-    jsRequest.cf.timezone,
-    parseQ(jsRequest.headers.get("Accept-Language")),
-    jsRequest.cf.latitude,
-    jsRequest.cf.longitude
-  )
+  return {
+    point: {
+      continent: jsRequest.cf.continent,
+      country: jsRequest.cf.country,
+      region: jsRequest.cf.regionCode,
+      city: jsRequest.cf.city,
+      postCode: jsRequest.cf.postalCode,
+      lat: jsRequest.cf.latitude,
+      long: jsRequest.cf.longitude
+    },
+    tz: jsRequest.cf.timezone,
+    lang: parseQ(jsRequest.headers.get("Accept-Language"))
+  };
 };
 
 export class RequestHandler {
   // Request handler that can be called by cloudflare pages.
 
-  constructor(loader, config) {
-    this.loader = loader;
-    this.config = config;
+  constructor(loader) {
+    this.#loader = loader;
 
     // Initialise finishing touches
-    this.finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches(config));
+    this.#finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches);
   };
 
   async fetch(jsRequest, env) {
@@ -86,8 +82,8 @@ export class RequestHandler {
 
     // Get the user's approximate location
     if (url.pathname.startsWith("/_location")) {
-      const geolocation = createGeoLocation(jsRequest);
-      return new Response(geolocation.serialise());
+      const geolocation = getLocation(jsRequest);
+      return new Response(serialise(geolocation));
     };
 
     // Create a MicroRenderRequest or FragmentRequest object and call its handler
@@ -103,21 +99,24 @@ export class RequestHandler {
       request = await MicroRenderRequest.read(
         jsRequest, {
           env,
-          geolocation: createGeoLocation(jsRequest)
+          geolocation: getLocation(jsRequest)
         }
       );
     };
 
-    return this.finishingTouches.transform(
+    return this.#finishingTouches.transform(
       await tryCatchAsync(
         // Pass control to the request to handle itself
-        () => request.handle(this.loader),
+        () => request.handle(this.#loader),
         // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
-        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.loader, request)
+        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
       ).catch(
         // Retry limit exceeded
         () => new Response("500 Internal Server Error", {status: 500})
       )
     );
   };
+  
+  #finishingTouches;
+  #loader;
 };

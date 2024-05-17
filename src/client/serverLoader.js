@@ -22,7 +22,7 @@ export class ServerLoader {
     // Defers to the server.
   
     constructor(fragments) {
-      this.fragments = fragments;
+      this.#fragments = fragments;
     };
   
     async control(fragment, request) {
@@ -111,7 +111,7 @@ export class ServerLoader {
       const fragmentPromises = [];
   
       // Update the cache
-      for (const [fragment, importer] of this.fragments) {
+      for (const [fragment, importer] of this.#fragments) {
         if (currentFragments.has(fragment) && !fragmentCache.has(fragment)) {
           // Add to cache
   
@@ -125,6 +125,8 @@ export class ServerLoader {
         };
       };
   
-      await Promise.all(fragmentPromises);
+      return Promise.all(fragmentPromises);
     };
+
+    #fragments;
   };
