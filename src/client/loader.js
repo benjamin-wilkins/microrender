@@ -20,15 +20,14 @@ import { ServerLoader } from "./serverLoader.js";
 export class Loader {
   // Hook loader passed to MicroRenderRequest.handle().
 
-  constructor(runtime, fragments, config) {
+  constructor(runtime, fragments) {
     this.#runtime = runtime;
-    this.#config = config;
 
     // Only store already-loaded fragments here
     this.#fragments = new Map;
 
     // Get not-already-loaded fragments from the server
-    this.#server = new ServerLoader(fragments, config);
+    this.#server = new ServerLoader(fragments);
   };
 
   async control(fragment, request) {
@@ -95,7 +94,6 @@ export class Loader {
     return this.#server.preLoadJS(this.#fragments);
   };
 
-  #config;
   #fragments;
   #runtime;
   #server;

@@ -27,7 +27,7 @@ export class MicroRenderGlobal {
     const request = new Request(resource);
 
     // Add history entry
-    window.history.pushState(null, "", request.url);
+    history.pushState(null, "", request.url);
 
     // Get the new page
     this.#requestHandler.fetch(request);

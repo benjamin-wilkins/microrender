@@ -21,17 +21,11 @@ import { FragmentRequest } from "./fragmentRequest.js";
 
 class FinishingTouches {
   // Adds final modifiations before the HTML is streamed to the client.
-  constructor(config) {
-    this.#config = config;
-  }
-
   async comments (comment) {
-    if (this.#config.stripComments) {
+    if ($STRIP_COMMENTS) {
       comment.remove();
     };
   };
-
-  #config;
 };
 
 function getLocation(jsRequest) {
@@ -55,12 +49,11 @@ function getLocation(jsRequest) {
 export class RequestHandler {
   // Request handler that can be called by cloudflare pages.
 
-  constructor(loader, config) {
+  constructor(loader) {
     this.#loader = loader;
-    this.#config = config;
 
     // Initialise finishing touches
-    this.#finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches(this.#config));
+    this.#finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches);
   };
 
   async fetch(jsRequest, env) {
@@ -123,8 +116,7 @@ export class RequestHandler {
       )
     );
   };
-
-  #config;
+  
   #finishingTouches;
   #loader;
 };

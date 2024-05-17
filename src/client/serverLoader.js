@@ -21,9 +21,8 @@ export class ServerLoader {
     // Hook loader for loading fragments that are not already partially loaded on the client.
     // Defers to the server.
   
-    constructor(fragments, config) {
+    constructor(fragments) {
       this.#fragments = fragments;
-      this.#config = config;
     };
   
     async control(fragment, request) {
@@ -129,6 +128,5 @@ export class ServerLoader {
       return Promise.all(fragmentPromises);
     };
 
-    #config;
     #fragments;
   };

@@ -21,9 +21,8 @@ import { HTTPError } from "../common/error.js";
 export class RequestHandler {
   // Request handler that can be called on browsers.
 
-  constructor(loader, config) {
+  constructor(loader) {
     this.#loader = loader;
-    this.#config = config;
 
     // Parse the initial request and save it as the most recent to allow timeouts
     this.#lastRequest = MicroRenderRequest.deserialise(
@@ -81,7 +80,7 @@ export class RequestHandler {
           // Any redirect
 
           // Add history entry
-          window.history.replaceState(null, "", response.headers.get("Location"));
+          history.replaceState(null, "", response.headers.get("Location"));
 
           // Update request URL and retry request
           request.url = new URL(location, response.headers.get("Location"));
@@ -94,7 +93,6 @@ export class RequestHandler {
     return this.#loader.render(fragment, this.#lastRequest, {fragmentElement});
   };
 
-  #config;
   #geolocation;
   #lastRequest;
   #loader;

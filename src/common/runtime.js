@@ -21,11 +21,10 @@ class Base$ extends ExtendableFunction {
   // Global MicroRender APIs common to all hooks.
   // Contains runtime-independent methods and delegates to `strategy` for runtime-specific methods.
 
-  constructor(request, config, strategy) {
+  constructor(request, strategy) {
     super();
 
     this.#request = request;
-    this.#config = config;
     this.#strategy = strategy;
   };
 
@@ -50,10 +49,6 @@ class Base$ extends ExtendableFunction {
       // Get the binding info
       const binding = url.pathname.split("/")[0];
       const path = url.pathname.split("/").slice(1);
-
-      if (!this.#config.bindings.includes(binding)) {
-        throw new TypeError("Unrecognised binding");
-      };
 
       // Build the new URL for the binding
       const bindingUrl = new URL(`https://${binding}`);
@@ -157,18 +152,16 @@ class Base$ extends ExtendableFunction {
     return this.#request.geolocation.lang;
   };
 
-  #config;
   #request;
   #strategy;
 };
 
 export class Control$ extends Base$ {
   // MicroRender control APIs
-  constructor(request, config, strategy, loader) {
-    super(request, config, strategy);
+  constructor(request, strategy, loader) {
+    super(request, strategy);
 
     this.#request = request;
-    this.#config = config;
     this.#strategy = strategy;
     this.#loader = loader;
   }
@@ -259,7 +252,6 @@ export class Control$ extends Base$ {
     await this.#loader.control(fragment, this.#request);
   };
 
-  #config;
   #loader;
   #request;
   #strategy;
@@ -268,12 +260,10 @@ export class Control$ extends Base$ {
 export class Render$ extends Base$ {
   // MicroRender render APIs
 
-  constructor(request, config, strategy, data) {
-    super(request, config, strategy);
+  constructor(request, strategy, data) {
+    super(request, strategy);
 
-    this.#config = config;
     this.#data = data;
-    this.#request = request;
     this.#strategy = strategy;
   };
 
@@ -297,8 +287,6 @@ export class Render$ extends Base$ {
     return this.#data.get(attr);
   };
 
-  #config;
   #data;
-  #request;
   #strategy;
 };

@@ -20,9 +20,8 @@ import { ElementHandler } from "./element.js"
 class BaseStrategy {
   // Strategy passed to the $ constructor. Contains runtime-specific methods common to all hooks.
 
-  constructor(request, config) {
+  constructor(request) {
     this.#request = request;
-    this.#config = config;
   };
 
   doBindingFetch(binding, bindingUrl, resource, options) {
@@ -46,16 +45,15 @@ class BaseStrategy {
     // The geolocation won't have changed so just return the same one
     return this.#request.geolocation;
   };
-
-  #config;
+  
   #request;
 };
 
 class ControlStrategy extends BaseStrategy {
   // Strategy passed to the $ constructor. Contains runtime-specific methods for the `control` hook.
 
-  constructor(request, config, {headers}) {
-    super(request, config);
+  constructor(request, {headers}) {
+    super(request);
     this.#headers = headers;
   }
 
@@ -70,8 +68,8 @@ class ControlStrategy extends BaseStrategy {
 class RenderStrategy extends BaseStrategy {
 // Strategy passed to the $ constructor. Contains runtime-specific methods for the `render` hook.
 
-  constructor(request, config) {
-    super(request, config);
+  constructor(request) {
+    super(request);
     this.#rewriter = new HTMLRewriter;
   };
 
@@ -91,16 +89,12 @@ class RenderStrategy extends BaseStrategy {
 };
 
 export class Runtime {
-  constructor(config) {
-    this.#config = config;
-  }
-
   async control(fn, request, loader, {headers}) {
     // Run the control hook.
 
     // Generate APIs
-    const strategy = new ControlStrategy(request, this.#config, {headers});;
-    const $ = new Control$(request, this.#config, strategy, loader);
+    const strategy = new ControlStrategy(request, {headers});;
+    const $ = new Control$(request, strategy, loader);
 
     // Run the JS
     await fn($);
@@ -110,8 +104,8 @@ export class Runtime {
     // Run the render hook.
 
     // Generate APIs
-    const strategy = new RenderStrategy(request, this.#config);
-    const $ = new Render$(request, this.#config, strategy, data);
+    const strategy = new RenderStrategy(request);
+    const $ = new Render$(request, strategy, data);
 
     // Run the JS
     await fn($);
@@ -119,6 +113,4 @@ export class Runtime {
     // Transform the HTML
     return $._transform(response);
   };
-
-  #config;
 };

@@ -33,10 +33,10 @@ export class MicroRenderRequest {
     this.geolocation = geolocation;
 
     // Ensure `env` is non-enumerable so it is not serialised
-    Object.defineProperty(this, "env", {value: env});
+    Object.defineProperty(this, "env", {value: env, enumerable: false});
 
     // Ensure `formData` is not serialised as it's inefficient
-    Object.defineProperty(this, "formData", {value: formData});
+    Object.defineProperty(this, "formData", {value: formData, enumerable: false});
 
     // Parse the 'Cookie' header
     this.cookies = cookies ?

@@ -20,16 +20,16 @@ import { RequestHandler } from "./handleRequest.js";
 import { Loader } from "./loader.js";
 import { Runtime } from "./runtime.js";
 
-export function init(fragments, config) {
+export function init(fragments) {
   // Initialise the MicroRender client.
 
   // Initialise each component
-  const runtime = new Runtime(config);
-  const loader = new Loader(runtime, fragments, config);
-  const requestHandler = new RequestHandler(loader, config);
+  const runtime = new Runtime;
+  const loader = new Loader(runtime, fragments);
+  const requestHandler = new RequestHandler(loader);
 
   // Expose the external API
-  globalThis.microrender = new MicroRenderGlobal(requestHandler);
+  window.microrender = new MicroRenderGlobal(requestHandler);
 
   addEventListener("load", async () => {
     // Load the fragment JS for visile fragments

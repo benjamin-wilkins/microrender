@@ -19,10 +19,9 @@ import { getData } from "../common/helpers.js";
 export class Loader {
   // Hook loader passed to *Request.handle().
 
-  constructor(runtime, fragments, config) {
+  constructor(runtime, fragments) {
     this.#runtime = runtime;
     this.#fragments = fragments;
-    this.#config = config;
   };
 
   async control(fragment, request, {headers=new Headers}={}) {
@@ -78,8 +77,7 @@ export class Loader {
 
     return response;
   };
-
-  #config;
+  
   #fragments;
   #runtime;
 };
