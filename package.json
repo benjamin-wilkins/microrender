@@ -1,6 +1,6 @@
 {
   "name": "microrender",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Simple JS HTML rendering engine that runs on the edge and the browser for optimum speed and compatibility.",
   "repository": {
     "type": "git",
