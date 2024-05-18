@@ -65,6 +65,13 @@ export class ServerLoader {
   
         throw new HTTPError(response.status);
       };
+
+      // Set cookies from headers
+      const cookies = JSON.parse(response.headers.get("MicroRender-Set-Cookie") || "[]");
+
+      for (const cookie of cookies) {
+        document.cookie = cookie;
+      };
     };
   
     async render(fragment, request, {data, fragmentElement}) {

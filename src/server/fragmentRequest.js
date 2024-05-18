@@ -130,6 +130,9 @@ export class FragmentRequest {
   get geolocation() {return this.#request.geolocation};
   set geolocation(value) {this.#request.geolocation = value};
 
+  // Header name for setting cookies. Used for CORS to allow immutable URLs.
+  setCookie = "MicroRender-Set-Cookie";
+
   #fragment;
   #hook;
   #request;
