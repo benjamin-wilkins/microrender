@@ -126,8 +126,14 @@ export class RequestHandler {
 
       response = addFinishingTouches(request, response);
 
-      response.headers.set("Access-Control-Allow-Headers", "*");
-      response.headers.set("Access-Control-Expose-Headers", "*");
+      response.headers.set(
+        "Access-Control-Allow-Headers",
+        "MicroRender-Request, MicroRender-Data"
+      );
+      response.headers.set(
+        "Access-Control-Expose-Headers",
+        "MicroRender-Request, MicroRender-Status, MicroRender-Location, MicroRender-Set-Cookie"
+      );
     };
 
     // Allow CORS from allowed domains
