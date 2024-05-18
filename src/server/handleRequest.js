@@ -65,6 +65,7 @@ export class RequestHandler {
 
       // Add a long cache duration as this is an immutable asset URL
       response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
+      return response;
     };
     
     // Pass binding URLs to the service binding
