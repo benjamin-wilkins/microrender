@@ -43,6 +43,7 @@ export class RequestHandler {
 
   constructor(loader) {
     this.#loader = loader;
+    this.#corsOrigins = new RegExp($CORS_ORIGINS);
   };
 
   async fetch(jsRequest, env) {
@@ -51,10 +52,7 @@ export class RequestHandler {
     const url = new URL(jsRequest.url);
     let response;
 
-    if (jsRequest.method == "OPTIONS") {
-      // CORS preflight request
-      response = new Response;
-    } else if (url.pathname.startsWith("/assets/")) {
+    if (url.pathname.startsWith("/assets/")) {
       // Pass through asset URLs
 
       // Don't use the browser cache unless there is an immutable URL for this deployment
@@ -65,24 +63,31 @@ export class RequestHandler {
         return Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
       };
 
-      let response = await env.ASSETS.fetch(jsRequest);
+      response = await env.ASSETS.fetch(jsRequest);
+      
+      // Ensure headers are mutable
       response = new Response(response.body, response);
 
       // Add a long cache duration as this is an immutable asset URL
       response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
+    } else if (jsRequest.method == "OPTIONS") {
+      // CORS preflight request
+      response = new Response;
     } else if (url.pathname.startsWith("/_binding/")) {
       // Pass binding URLs to the service binding
 
       const newRequest = new Request(url.searchParams.get("url"), jsRequest);
-      let binding;
 
       try {
-        binding = env[url.pathname.split("/")[2]];
+        const binding = env[url.pathname.split("/")[2]];
+        response = await binding.fetch(newRequest);
+
+        // Ensure headers are mutable
+        response = new Response(response.body, response);
       } catch (e) {
-        return new Response("500 Internal Server Error", {status: 500});
+        response = new Response("500 Internal Server Error", {status: 500});
       };
 
-      response = await binding.fetch(newRequest);
     } else if (url.pathname.startsWith("/_location")) {
       // Get the user's approximate location
 
@@ -123,8 +128,10 @@ export class RequestHandler {
     };
 
     // Allow CORS from allowed domains
-    if ($CORS_ORIGINS) {
-      response.headers.set("Access-Control-Allow-Origin", $CORS_ORIGINS);
+    const origin = jsRequest.headers.get("Origin");
+
+    if (this.#corsOrigins.test(origin)) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
       response.headers.set("Vary", "Origin");
     };
 
@@ -132,4 +139,5 @@ export class RequestHandler {
   };
 
   #loader;
+  #corsOrigins;
 };

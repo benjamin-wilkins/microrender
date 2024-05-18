@@ -7,5 +7,5 @@ export default {
   stripComments: false,
   sourceMap: false,
   minify: true,
-  corsOrigins: ""
+  corsOrigins: ".*"
 };
