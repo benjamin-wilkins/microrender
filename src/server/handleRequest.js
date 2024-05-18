@@ -18,15 +18,7 @@ import { HTTPError } from "../common/error.js";
 import { parseQ, tryCatchAsync, serialise } from "../common/helpers.js";
 import { MicroRenderRequest } from "../common/request.js";
 import { FragmentRequest } from "./fragmentRequest.js";
-
-class FinishingTouches {
-  // Adds final modifiations before the HTML is streamed to the client.
-  async comments (comment) {
-    if ($STRIP_COMMENTS) {
-      comment.remove();
-    };
-  };
-};
+import { addFinishingTouches } from "./finishingTouches.js";
 
 function getLocation(jsRequest) {
   // Create a geolocation object from the IP and datacentre location.
@@ -51,9 +43,6 @@ export class RequestHandler {
 
   constructor(loader) {
     this.#loader = loader;
-
-    // Initialise finishing touches
-    this.#finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches);
   };
 
   async fetch(jsRequest, env) {
@@ -63,7 +52,20 @@ export class RequestHandler {
 
     // Pass through asset URLs
     if (url.pathname.startsWith("/assets/")) {
-      return env.ASSETS.fetch(jsRequest);
+      // Don't use the browser cache unless there is an immutable URL for this deployment
+      if (!$DEPLOY_URL) return env.ASSETS.fetch(jsRequest);
+
+      // Redirect to the immutable URL if the request is made on the main domain
+      if (url.origin != $DEPLOY_URL) {
+        url.origin = $DEPLOY_URL;
+        return Response.redirect(url);
+      };
+
+      let response = await env.ASSETS.fetch(jsRequest);
+      response = new Response(response.body, response);
+
+      // Add a long cache duration as this is an immutable asset URL
+      response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
     };
     
     // Pass binding URLs to the service binding
@@ -104,19 +106,18 @@ export class RequestHandler {
       );
     };
 
-    return this.#finishingTouches.transform(
-      await tryCatchAsync(
-        // Pass control to the request to handle itself
-        () => request.handle(this.#loader),
-        // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
-        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
-      ).catch(
-        // Retry limit exceeded
-        () => new Response("500 Internal Server Error", {status: 500})
-      )
+    const response = await tryCatchAsync(
+      // Pass control to the request to handle itself
+      () => request.handle(this.#loader),
+      // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
+      (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
+    ).catch(
+      // Retry limit exceeded
+      () => new Response("500 Internal Server Error", {status: 500})
     );
+
+    return addFinishingTouches(request, response);
   };
-  
-  #finishingTouches;
+
   #loader;
 };
