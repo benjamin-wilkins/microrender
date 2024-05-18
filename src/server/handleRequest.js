@@ -57,7 +57,7 @@ export class RequestHandler {
 
       // Redirect to the immutable URL if the request is made on the main domain
       if (url.origin != $DEPLOY_URL) {
-        return Response.redirect(`${$DEPLOY_URL || ""}/${url.pathname}/${url.search}`);
+        return Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
       };
 
       let response = await env.ASSETS.fetch(jsRequest);
