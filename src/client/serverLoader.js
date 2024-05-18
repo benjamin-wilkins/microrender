@@ -30,7 +30,7 @@ export class ServerLoader {
   
       // Create a request for the server
       const jsRequest = new Request(
-        `/_fragment/${fragment}/control`,
+        `${$DEPLOY_URL || ""}/_fragment/${fragment}/control`,
         {
           credentials: "include",
           method: request.formData ? "POST" : "GET",
@@ -73,7 +73,7 @@ export class ServerLoader {
   
       // Create a request for the server
       const jsRequest = new Request(
-        `/_fragment/${fragment}/render`,
+        `${$DEPLOY_URL || ""}/_fragment/${fragment}/render`,
         {credentials: "include"}
       );
   

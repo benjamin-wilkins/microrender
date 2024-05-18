@@ -24,7 +24,7 @@ class BaseStrategy {
     // Fetch a binding from the server over HTTP.
 
     // Build the URL to send to the server
-    const serverUrl = new URL(`/_binding/${binding}`, location.href);
+    const serverUrl = new URL(`${DEPLOY_URL | ""}/_binding/${binding}`, location.href);
     serverUrl.searchParams.set("url", bindingUrl);
 
     if (resource instanceof Request) {

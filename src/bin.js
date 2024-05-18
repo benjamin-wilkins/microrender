@@ -152,6 +152,7 @@ async function buildJS(fragments) {
     minify: config.minify,
     sourcemap: config.sourceMap,
     splitting: false,
+
     define: {
       $DEPLOY_URL: JSON.stringify(deployUrl),
       $STRIP_COMMENTS: JSON.stringify(config.stripComments)
@@ -167,7 +168,11 @@ async function buildJS(fragments) {
     keepNames: true,
     minify: config.minify,
     sourcemap: config.sourceMap,
-    splitting: true
+    splitting: true,
+
+    define: {
+      $DEPLOY_URL: JSON.stringify(deployUrl)
+    }
   });
 };
 
