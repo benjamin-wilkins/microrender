@@ -32,14 +32,13 @@ export class ServerLoader {
       const jsRequest = new Request(
         `${$DEPLOY_URL || ""}/_fragment/${fragment}/control`,
         {
-          credentials: "include",
           method: request.formData ? "POST" : "GET",
-          body: request.formData
+          body: request.formData,
+          headers: {
+            "MicroRender-Request": request.serialise()
+          }
         }
       );
-  
-      // Serialise request into header
-      jsRequest.headers.set("MicroRender-Request", request.serialise());
   
       // Request the server to load the fragment
       const response = await fetch(jsRequest);
@@ -74,12 +73,13 @@ export class ServerLoader {
       // Create a request for the server
       const jsRequest = new Request(
         `${$DEPLOY_URL || ""}/_fragment/${fragment}/render`,
-        {credentials: "include"}
+        {
+          headers: {
+            "MicroRender-Request": request.serialise(),
+            "MicroRender-Data": JSON.stringify(Array.from(data))
+          }
+        }
       );
-  
-      // Serialise request and fragment data attributes into header
-      jsRequest.headers.set("MicroRender-Request", request.serialise());
-      jsRequest.headers.set("MicroRender-Data", JSON.stringify(Array.from(data)));
   
       // Request the server to load the fragment
       const response = await fetch(jsRequest);

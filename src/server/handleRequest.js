@@ -125,6 +125,9 @@ export class RequestHandler {
       );
 
       response = addFinishingTouches(request, response);
+
+      response.headers.set("Access-Control-Allow-Headers", "MicroRender-Request, MicroRender-Data");
+      response.headers.set("Access-Control-Expose-Headers", "MicroRender-Request");
     };
 
     // Allow CORS from allowed domains
@@ -132,10 +135,11 @@ export class RequestHandler {
 
     if (this.#corsOrigins.test(origin)) {
       response.headers.set("Access-Control-Allow-Origin", origin);
-      response.headers.set("Access-Control-Allow-Credentials", true);
-      response.headers.set("Access-Control-Max-Age", 24*60*60);
-      response.headers.set("Vary", "Origin");
     };
+
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST");
+    response.headers.set("Access-Control-Max-Age", 24*60*60);
+    response.headers.set("Vary", "Origin");
 
     return response;
   };
