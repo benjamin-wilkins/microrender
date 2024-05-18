@@ -154,6 +154,7 @@ async function buildJS(fragments) {
     splitting: false,
 
     define: {
+      $CORS_ORIGINS: JSON.stringify(config.corsOrigins),
       $DEPLOY_URL: JSON.stringify(deployUrl),
       $STRIP_COMMENTS: JSON.stringify(config.stripComments)
     }

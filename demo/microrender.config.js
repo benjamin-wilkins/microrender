@@ -25,11 +25,13 @@ export const local = {
 };
 
 export const staging = {
+  corsOrigins: "*.microrender.pages.dev",
   stripComments: true,
   sourceMap: false
 };
 
 export const production = {
+  corsOrigins: "*.microrender.pages.dev",
   stripComments: true,
   sourceMap: false
 };

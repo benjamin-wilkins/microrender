@@ -49,9 +49,14 @@ export class RequestHandler {
     // Handle incoming HTTP requests.
 
     const url = new URL(jsRequest.url);
+    let response;
 
-    // Pass through asset URLs
-    if (url.pathname.startsWith("/assets/")) {
+    if (jsRequest.method == "OPTIONS") {
+      // CORS preflight request
+      response = new Response;
+    } else if (url.pathname.startsWith("/assets/")) {
+      // Pass through asset URLs
+
       // Don't use the browser cache unless there is an immutable URL for this deployment
       if (!$DEPLOY_URL) return env.ASSETS.fetch(jsRequest);
 
@@ -65,11 +70,9 @@ export class RequestHandler {
 
       // Add a long cache duration as this is an immutable asset URL
       response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
-      return response;
-    };
-    
-    // Pass binding URLs to the service binding
-    if (url.pathname.startsWith("/_binding/")) {
+    } else if (url.pathname.startsWith("/_binding/")) {
+      // Pass binding URLs to the service binding
+
       const newRequest = new Request(url.searchParams.get("url"), jsRequest);
       let binding;
 
@@ -79,44 +82,53 @@ export class RequestHandler {
         return new Response("500 Internal Server Error", {status: 500});
       };
 
-      return binding.fetch(newRequest);
-    };
+      response = await binding.fetch(newRequest);
+    } else if (url.pathname.startsWith("/_location")) {
+      // Get the user's approximate location
 
-    // Get the user's approximate location
-    if (url.pathname.startsWith("/_location")) {
       const geolocation = getLocation(jsRequest);
-      return new Response(serialise(geolocation));
-    };
-
-    // Create a MicroRenderRequest or FragmentRequest object and call its handler
-    let request;
-    
-    if (url.pathname.startsWith("/_fragment/")) {
-      // The client is requesting a single fragment as part of a larger request
-      request = await FragmentRequest.read(
-        jsRequest, {env}
-      );
+      response = new Response(serialise(geolocation));
     } else {
-      // This is an ordinary request
-      request = await MicroRenderRequest.read(
-        jsRequest, {
-          env,
-          geolocation: getLocation(jsRequest)
-        }
+      // Standard request
+
+      // Create a MicroRenderRequest or FragmentRequest object and call its handler
+      let request;
+      
+      if (url.pathname.startsWith("/_fragment/")) {
+        // The client is requesting a single fragment as part of a larger request
+        request = await FragmentRequest.read(
+          jsRequest, {env}
+        );
+      } else {
+        // This is an ordinary request
+        request = await MicroRenderRequest.read(
+          jsRequest, {
+            env,
+            geolocation: getLocation(jsRequest)
+          }
+        );
+      };
+
+      response = await tryCatchAsync(
+        // Pass control to the request to handle itself
+        () => request.handle(this.#loader),
+        // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
+        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
+      ).catch(
+        // Retry limit exceeded
+        () => new Response("500 Internal Server Error", {status: 500})
       );
+
+      response = addFinishingTouches(request, response);
     };
 
-    const response = await tryCatchAsync(
-      // Pass control to the request to handle itself
-      () => request.handle(this.#loader),
-      // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
-      (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
-    ).catch(
-      // Retry limit exceeded
-      () => new Response("500 Internal Server Error", {status: 500})
-    );
+    // Allow CORS from allowed domains
+    if ($CORS_ORIGINS) {
+      response.headers.set("Access-Control-Allow-Origin", $CORS_ORIGINS);
+      response.headers.set("Vary", "Origin");
+    };
 
-    return addFinishingTouches(request, response);
+    return response;
   };
 
   #loader;
