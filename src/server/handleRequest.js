@@ -132,6 +132,8 @@ export class RequestHandler {
 
     if (this.#corsOrigins.test(origin)) {
       response.headers.set("Access-Control-Allow-Origin", origin);
+      response.headers.set("Access-Control-Allow-Credentials", true);
+      response.headers.set("Access-Control-Max-Age", 24*60*60);
       response.headers.set("Vary", "Origin");
     };
 
