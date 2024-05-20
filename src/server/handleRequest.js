@@ -57,7 +57,10 @@ export class RequestHandler {
 
       // Don't use the browser cache unless there is an immutable URL for this deployment
       if (!$DEPLOY_URL) {
-        response = env.ASSETS.fetch(jsRequest)
+        response = await env.ASSETS.fetch(jsRequest)
+        
+        // Ensure headers are mutable
+        response = new Response(response.body, response);
       };
 
       // Redirect to the immutable URL if the request is made on the main domain
