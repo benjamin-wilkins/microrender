@@ -18,7 +18,7 @@
 
 import process from "node:process";
 import fs from "node:fs/promises";
-import fse from "fs-extra/esm"
+import fse from "fs-extra/esm";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -27,13 +27,8 @@ import * as esbuild from "esbuild";
 
 import defaultConfig from "./common/default.config.js";
 
-let env;
-
-if (process.env["ENV"]) {
-  env = process.env["ENV"].toLowerCase();
-} else {
-  env = "local";
-};
+const env = process.env["ENV"]?.toLowerCase?.() || "local";
+const deployUrl = process.env["DEPLOY_URL"] || null;
 
 const command = process.argv[2];
 const cwd = process.cwd();
@@ -157,8 +152,11 @@ async function buildJS(fragments) {
     minify: config.minify,
     sourcemap: config.sourceMap,
     splitting: false,
+
     define: {
-      $STRIP_COMMENTS: `${config.stripComments}`
+      $CORS_ORIGINS: JSON.stringify(config.corsOrigins),
+      $DEPLOY_URL: JSON.stringify(deployUrl),
+      $STRIP_COMMENTS: JSON.stringify(config.stripComments)
     }
   });
 
@@ -171,7 +169,11 @@ async function buildJS(fragments) {
     keepNames: true,
     minify: config.minify,
     sourcemap: config.sourceMap,
-    splitting: true
+    splitting: true,
+
+    define: {
+      $DEPLOY_URL: JSON.stringify(deployUrl)
+    }
   });
 };
 

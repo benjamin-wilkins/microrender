@@ -18,15 +18,7 @@ import { HTTPError } from "../common/error.js";
 import { parseQ, tryCatchAsync, serialise } from "../common/helpers.js";
 import { MicroRenderRequest } from "../common/request.js";
 import { FragmentRequest } from "./fragmentRequest.js";
-
-class FinishingTouches {
-  // Adds final modifiations before the HTML is streamed to the client.
-  async comments (comment) {
-    if ($STRIP_COMMENTS) {
-      comment.remove();
-    };
-  };
-};
+import { addFinishingTouches } from "./finishingTouches.js";
 
 function getLocation(jsRequest) {
   // Create a geolocation object from the IP and datacentre location.
@@ -51,61 +43,80 @@ export class RequestHandler {
 
   constructor(loader) {
     this.#loader = loader;
-
-    // Initialise finishing touches
-    this.#finishingTouches = new HTMLRewriter().onDocument(new FinishingTouches);
+    this.#corsOrigins = new RegExp($CORS_ORIGINS);
   };
 
   async fetch(jsRequest, env) {
     // Handle incoming HTTP requests.
 
     const url = new URL(jsRequest.url);
+    let response;
 
-    // Pass through asset URLs
     if (url.pathname.startsWith("/assets/")) {
-      return env.ASSETS.fetch(jsRequest);
-    };
-    
-    // Pass binding URLs to the service binding
-    if (url.pathname.startsWith("/_binding/")) {
-      const newRequest = new Request(url.searchParams.get("url"), jsRequest);
-      let binding;
+      // Pass through asset URLs
 
-      try {
-        binding = env[url.pathname.split("/")[2]];
-      } catch (e) {
-        return new Response("500 Internal Server Error", {status: 500});
+      // Don't use the browser cache unless there is an immutable URL for this deployment
+      if (!$DEPLOY_URL) {
+        response = env.ASSETS.fetch(jsRequest)
       };
 
-      return binding.fetch(newRequest);
-    };
+      // Redirect to the immutable URL if the request is made on the main domain
+      if (url.origin != $DEPLOY_URL) {
+        response = Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
+      } else {
+        response = await env.ASSETS.fetch(jsRequest);
+        
+        // Ensure headers are mutable
+        response = new Response(response.body, response);
 
-    // Get the user's approximate location
-    if (url.pathname.startsWith("/_location")) {
+        // Add a long cache duration as this is an immutable asset URL
+        response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
+      };
+    } else if (jsRequest.method == "OPTIONS") {
+      // CORS preflight request
+      response = new Response;
+    } else if (url.pathname.startsWith("/_binding/")) {
+      // Pass binding URLs to the service binding
+
+      const newRequest = new Request(url.searchParams.get("url"), jsRequest);
+
+      try {
+        const binding = env[url.pathname.split("/")[2]];
+        response = await binding.fetch(newRequest);
+
+        // Ensure headers are mutable
+        response = new Response(response.body, response);
+      } catch (e) {
+        response = new Response("500 Internal Server Error", {status: 500});
+      };
+
+    } else if (url.pathname.startsWith("/_location")) {
+      // Get the user's approximate location
+
       const geolocation = getLocation(jsRequest);
-      return new Response(serialise(geolocation));
-    };
-
-    // Create a MicroRenderRequest or FragmentRequest object and call its handler
-    let request;
-    
-    if (url.pathname.startsWith("/_fragment/")) {
-      // The client is requesting a single fragment as part of a larger request
-      request = await FragmentRequest.read(
-        jsRequest, {env}
-      );
+      response = new Response(serialise(geolocation));
     } else {
-      // This is an ordinary request
-      request = await MicroRenderRequest.read(
-        jsRequest, {
-          env,
-          geolocation: getLocation(jsRequest)
-        }
-      );
-    };
+      // Standard request
 
-    return this.#finishingTouches.transform(
-      await tryCatchAsync(
+      // Create a MicroRenderRequest or FragmentRequest object and call its handler
+      let request;
+      
+      if (url.pathname.startsWith("/_fragment/")) {
+        // The client is requesting a single fragment as part of a larger request
+        request = await FragmentRequest.read(
+          jsRequest, {env}
+        );
+      } else {
+        // This is an ordinary request
+        request = await MicroRenderRequest.read(
+          jsRequest, {
+            env,
+            geolocation: getLocation(jsRequest)
+          }
+        );
+      };
+
+      response = await tryCatchAsync(
         // Pass control to the request to handle itself
         () => request.handle(this.#loader),
         // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
@@ -113,10 +124,27 @@ export class RequestHandler {
       ).catch(
         // Retry limit exceeded
         () => new Response("500 Internal Server Error", {status: 500})
-      )
-    );
+      );
+
+      response = addFinishingTouches(request, response);
+    };
+
+    // Allow CORS from allowed domains
+    const origin = jsRequest.headers.get("Origin");
+
+    if (this.#corsOrigins.test(origin)) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+    };
+
+    response.headers.set("Access-Control-Allow-Methods", "GET, POST");
+    response.headers.set("Access-Control-Allow-Headers", "*");
+    response.headers.set("Access-Control-Expose-Headers", "*");
+    response.headers.set("Access-Control-Max-Age", 24*60*60);
+    response.headers.set("Vary", "Origin");
+
+    return response;
   };
-  
-  #finishingTouches;
+
   #loader;
+  #corsOrigins;
 };

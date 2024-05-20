@@ -121,4 +121,7 @@ export class MicroRenderRequest {
   };
 
   formData = null;
+
+  // Header name for setting cookies. Used by server
+  setCookie = "Set-Cookie";
 };

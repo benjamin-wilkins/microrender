@@ -24,7 +24,7 @@ class BaseStrategy {
     // Fetch a binding from the server over HTTP.
 
     // Build the URL to send to the server
-    const serverUrl = new URL(`/_binding/${binding}`, location.href);
+    const serverUrl = new URL(`${$DEPLOY_URL || ""}/_binding/${binding}`, location.href);
     serverUrl.searchParams.set("url", bindingUrl);
 
     if (resource instanceof Request) {
@@ -43,7 +43,7 @@ class BaseStrategy {
     // Get an updated GeoLocation object.
 
     // Fetch a geolocation from the server
-    const response = await fetch("/_location");
+    const response = await fetch(`${$DEPLOY_URL || ""}/_location`);
     return deserialise(await response.text());
   };
 };
