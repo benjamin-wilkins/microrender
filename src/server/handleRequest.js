@@ -56,20 +56,22 @@ export class RequestHandler {
       // Pass through asset URLs
 
       // Don't use the browser cache unless there is an immutable URL for this deployment
-      if (!$DEPLOY_URL) return env.ASSETS.fetch(jsRequest);
+      if (!$DEPLOY_URL) {
+        response = env.ASSETS.fetch(jsRequest)
+      };
 
       // Redirect to the immutable URL if the request is made on the main domain
       if (url.origin != $DEPLOY_URL) {
-        return Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
+        response = Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
+      } else {
+        response = await env.ASSETS.fetch(jsRequest);
+        
+        // Ensure headers are mutable
+        response = new Response(response.body, response);
+
+        // Add a long cache duration as this is an immutable asset URL
+        response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
       };
-
-      response = await env.ASSETS.fetch(jsRequest);
-      
-      // Ensure headers are mutable
-      response = new Response(response.body, response);
-
-      // Add a long cache duration as this is an immutable asset URL
-      response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
     } else if (jsRequest.method == "OPTIONS") {
       // CORS preflight request
       response = new Response;
@@ -144,7 +146,9 @@ export class RequestHandler {
     response.headers.set("Access-Control-Max-Age", 24*60*60);
     response.headers.set("Vary", "Origin");
 
-    console.log(response.headers)
+    for (const [header, value] of response.headers) {
+      console.log(header, value)
+    }
 
     return response;
   };
