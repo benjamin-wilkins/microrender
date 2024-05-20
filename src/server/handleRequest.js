@@ -126,26 +126,25 @@ export class RequestHandler {
 
       response = addFinishingTouches(request, response);
 
-      response.headers.set(
-        "Access-Control-Allow-Headers",
-        "MicroRender-Request, MicroRender-Data"
-      );
-      response.headers.set(
-        "Access-Control-Expose-Headers",
-        "MicroRender-Request, MicroRender-Status, MicroRender-Location, MicroRender-Set-Cookie"
-      );
+      response.headers.set("Access-Control-Allow-Headers", "*");
+      response.headers.set("Access-Control-Expose-Headers", "*");
     };
 
     // Allow CORS from allowed domains
     const origin = jsRequest.headers.get("Origin");
 
     if (this.#corsOrigins.test(origin)) {
+      console.log("Allowed origin", origin)
       response.headers.set("Access-Control-Allow-Origin", origin);
+    } else {
+      console.log("Failed origin", origin)
     };
 
     response.headers.set("Access-Control-Allow-Methods", "GET, POST");
     response.headers.set("Access-Control-Max-Age", 24*60*60);
     response.headers.set("Vary", "Origin");
+
+    console.log(response.headers)
 
     return response;
   };
