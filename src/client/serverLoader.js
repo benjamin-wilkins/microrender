@@ -25,7 +25,7 @@ export class ServerLoader {
       this.#fragments = fragments;
     };
   
-    async control(fragment, request) {
+    async control(fragment, request, {props}) {
       // Load a fragment's control hook from the server.
   
       // Create a request for the server
@@ -35,7 +35,8 @@ export class ServerLoader {
           method: request.formData ? "POST" : "GET",
           body: request.formData,
           headers: {
-            "MicroRender-Request": request.serialise()
+            "MicroRender-Request": request.serialise(),
+            "MicroRender-Props": JSON.stringify(Array.from(props))
           }
         }
       );
@@ -74,7 +75,7 @@ export class ServerLoader {
       };
     };
   
-    async render(fragment, request, {data, fragmentElement}) {
+    async render(fragment, request, {props, fragmentElement}) {
       // Load a fragment's render hook from the server
   
       // Create a request for the server
@@ -83,7 +84,7 @@ export class ServerLoader {
         {
           headers: {
             "MicroRender-Request": request.serialise(),
-            "MicroRender-Data": JSON.stringify(Array.from(data))
+            "MicroRender-Props": JSON.stringify(Array.from(props))
           }
         }
       );

@@ -28,6 +28,7 @@ These APIs can be accessed on the $ object passed to any hook (exported function
 | `$.relocate()` => `Promise<Location>`                                 | Make a server request to update the user's location. Also updates `$.tz()` and `$.lang()` |
 | `$.tz()` => `string`                                                  | Gets the user's timezone from their IP address.                                           |
 | `$.lang()` => `Array`                                                 | Gets the user's preferred languages from their `Accept-Language` header                   |
+| `$.props(prop: string)` => `string` \| `undefined`                    | Get props passed in the `$.pass()` function or as data attributes on the fragment element.|
 
 ## Render APIs
 
@@ -45,7 +46,6 @@ fragment.
 | `Element.class($class: string, ?value: bool)` => `boolean`            | Shorthand for `(get/set)Class()`                                                          |
 | `Element.toggleClass($class: string)` => `void`                       | Similar to DOM `Element.classList.toggle()`                                               |
 | `Element.value(?value: string)` => `string`                           | Modify/read the value attribute/property of an element.                                   |
-| `$.data(attr: string)` => `string` \| `void`                          | Get data-* attributes from the fragment element.                                          |
 
 ## Control APIs
 
@@ -61,7 +61,7 @@ run before any of the body code. These (mostly) extend the global APIs.
 | `$.cookie(name: string, value: string)` => ` void`                    | Sets browser cookies.                                                                     |
 | `$.title(title: string)` => `void`                                    | Sets a title variable readable by all fragments. Should be added to the `<title>` tag.    |
 | `$.desc(desc: string)` => `void`                                      | Sets a description variable readable by all fragments. Should be added a `<meta>` tag.    |
-| `$.pass(fragment: string)` => `Promise<void>`                         | Passes control to the `control` hook of another fragment.                                 |
+| `$.pass(fragment: string, ?props: Object)` => `Promise<void>`         | Passes control to the `control` hook of another fragment.                                 |
 
 ## Additional Fragment APIs
 

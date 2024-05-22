@@ -21,11 +21,12 @@ class Base$ extends ExtendableFunction {
   // Global MicroRender APIs common to all hooks.
   // Contains runtime-independent methods and delegates to `strategy` for runtime-specific methods.
 
-  constructor(request, strategy) {
+  constructor(request, strategy, props) {
     super();
 
     this.#request = request;
     this.#strategy = strategy;
+    this.#props = props;
   };
 
   _call() {
@@ -152,19 +153,26 @@ class Base$ extends ExtendableFunction {
     return this.#request.geolocation.lang;
   };
 
+  props(prop) {
+    // Get properties for the fragment - either from the <microrender-fragment>'s data-* attributes or
+    // from the `$.pass()` function.
+    return this.#props.get(prop);
+  };
+
+  #props;
   #request;
   #strategy;
 };
 
 export class Control$ extends Base$ {
   // MicroRender control APIs
-  constructor(request, strategy, loader) {
-    super(request, strategy);
+  constructor(request, strategy, props, loader) {
+    super(request, strategy, props);
 
     this.#request = request;
     this.#strategy = strategy;
     this.#loader = loader;
-  }
+  };
 
   url(newUrl, status=302) {
     // Get / set (redirect) the URL.
@@ -246,10 +254,12 @@ export class Control$ extends Base$ {
     return super.desc();
   };
 
-  async pass(fragment) {
+  async pass(fragment, props={}) {
     // Run another fragment's control hook.
 
-    await this.#loader.control(fragment, this.#request);
+    props = new Map(Object.entries(props));
+
+    await this.#loader.control(fragment, this.#request, {props});
   };
 
   #loader;
@@ -260,10 +270,9 @@ export class Control$ extends Base$ {
 export class Render$ extends Base$ {
   // MicroRender render APIs
 
-  constructor(request, strategy, data) {
-    super(request, strategy);
+  constructor(request, strategy, props) {
+    super(request, strategy, props);
 
-    this.#data = data;
     this.#strategy = strategy;
   };
 
@@ -280,13 +289,5 @@ export class Render$ extends Base$ {
     return this.#strategy.doTransform(target);
   };
 
-  data(attr) {
-    // Get data-* attributes set on the fragment element. The `data-*` is automatically added to
-    // the attribute name, but no kebab-case to camelCase conversion occurs.
-
-    return this.#data.get(attr);
-  };
-
-  #data;
   #strategy;
 };

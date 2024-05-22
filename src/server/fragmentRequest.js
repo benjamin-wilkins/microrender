@@ -21,7 +21,7 @@ export class FragmentRequest {
   // and extends its interface with fragment-specific properties like `fragment` and `hook`. In most
   // cases a FragmentRequest should be treated exactly the same as a MicroRenderRequest object.
 
-  constructor(request, httpUrl, {env, data=new Map}) {
+  constructor(request, httpUrl, {env, props=new Map}) {
     // The underlying MicroRenderRequest for this FragmentRequest
     this.#request = request;
 
@@ -32,8 +32,8 @@ export class FragmentRequest {
     this.#fragment = httpUrl.pathname.split("/")[2];
     this.#hook = httpUrl.pathname.split("/")[3];
 
-    // The `data-*` attributes for the fragment being requested
-    this.data = data;
+    // The props of the fragment being requested
+    this.#props = props;
 
     // Ensure `env` is non-enumerable as it is platform-dependent
     Object.defineProperty(this, "env", {value: env});
@@ -50,13 +50,13 @@ export class FragmentRequest {
       request.formData = await jsRequest.formData();
     };
 
-    // Deserialise the fragment element's `data-*` attributes (if they exist)
-    const data = jsRequest.headers.has("MicroRender-Data")
-      ? new Map(JSON.parse(jsRequest.headers.get("MicroRender-Data")))
+    // Deserialise the fragment element's props
+    const props = jsRequest.headers.has("MicroRender-Props")
+      ? new Map(JSON.parse(jsRequest.headers.get("MicroRender-Props")))
       : null;
 
     // Create a FragmentRequest object
-    return new FragmentRequest(request, jsRequest.url, {data, env});
+    return new FragmentRequest(request, jsRequest.url, {props, env});
   };
 
   serialise() {
@@ -70,7 +70,7 @@ export class FragmentRequest {
     switch (this.#hook) {
       case "control":
         // Run the control hook
-        const headers = await loader.control(this.#fragment, this)
+        const headers = await loader.control(this.#fragment, this, {props: this.#props})
 
         // Serialise the request data to be sent back to the client
         headers.set("MicroRender-Request", this.serialise());
@@ -78,7 +78,7 @@ export class FragmentRequest {
         return new Response(null, {headers});
       case "render":
         // Run the render hook
-        const response = await loader.render(this.#fragment, this, {data: this.data});
+        const response = await loader.render(this.#fragment, this, {props: this.#props});
 
         return response;
       default:
@@ -136,4 +136,5 @@ export class FragmentRequest {
   #fragment;
   #hook;
   #request;
+  #props;
 };
