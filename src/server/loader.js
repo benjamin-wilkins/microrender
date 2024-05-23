@@ -24,7 +24,7 @@ export class Loader {
     this.#fragments = fragments;
   };
 
-  async control(fragment, request, {headers=new Headers}={}) {
+  async control(fragment, request, {props=new Map, headers=new Headers}={}) {
     // Load a fragment's control hook.
 
     // Get the fragment JS
@@ -33,13 +33,13 @@ export class Loader {
 
     if (fragmentJS?.control) {
       // Run the control hook
-      await this.#runtime.control(fragmentJS.control, request, this, {headers});
+      await this.#runtime.control(fragmentJS.control, request, this, props, {headers});
     };
   
     return headers;
   };
 
-  async render(fragment, request, {data=new Map, headers=new Headers}={}) {
+  async render(fragment, request, {props=new Map, headers=new Headers}={}) {
     // Load the render hook for the fragment.
 
     // Get the fragment JS
@@ -50,7 +50,7 @@ export class Loader {
 
     if (fragmentJS.render) {
       // Run the render hook
-      response = await this.#runtime.render(fragmentJS.render, request, this, data, {response});
+      response = await this.#runtime.render(fragmentJS.render, request, this, props, {response});
     };
 
     // Load child fragments
@@ -58,10 +58,10 @@ export class Loader {
       $("microrender-fragment", async (elmt) => {
         // Get fragment info
         const name = elmt.attr("name");
-        const data = getData(elmt.rewriterElement.attributes);
+        const props = getData(elmt.rewriterElement.attributes);
 
         // Load the new fragment's render hook
-        let newFragment = await this.render(name, request, {data});
+        let newFragment = await this.render(name, request, {props});
 
         // Add the sub-fragment into the page
         // NOTE: LOL-HTML (HTMLRewriter) does not currently support streaming into innerContent. This may
@@ -69,7 +69,7 @@ export class Loader {
         newFragment = await newFragment.text();
         elmt.html(newFragment);
       })
-    }, request, this, data, {response});
+    }, request, this, props, {response});
 
     for (const [header, value] of headers) {
       response.headers.set(header, value);

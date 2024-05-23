@@ -25,7 +25,7 @@ async function control ($) {
 
   switch (path) {
     case "/":
-      await $.pass("home");
+      await $.pass("home", {msg: "Hello!"});
       break
     case "/redirect":
       $.path("/");

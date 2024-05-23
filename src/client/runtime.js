@@ -91,23 +91,23 @@ class RenderStrategy extends BaseStrategy {
 };
 
 export class Runtime {
-  async control(fn, request, loader) {
+  async control(fn, request, loader, props) {
     // Run the control hook.
 
     // Generate APIs
     const strategy = new ControlStrategy;
-    const $ = new Control$(request, strategy, loader);
+    const $ = new Control$(request, strategy, props, loader);
 
     // Run the JS
     await fn($);
   };
 
-  async render(fn, request, loader, data, {fragmentElement}) {
+  async render(fn, request, loader, props, {fragmentElement}) {
     // Run the render hook.
 
     // Generate APIs
     const strategy = new RenderStrategy;
-    const $ = new Render$(request, strategy, data);
+    const $ = new Render$(request, strategy, props);
 
     // Run the JS
     await fn($);

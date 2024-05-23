@@ -30,12 +30,12 @@ export class Loader {
     this.#server = new ServerLoader(fragments);
   };
 
-  async control(fragment, request) {
+  async control(fragment, request, {props=new Map}={}) {
     // Load a fragment's control hook.
 
     // Run the control hook on the server if it is not cached locally
     if (!this.#fragments.has(fragment)) {
-      await this.#server.control(fragment, request)
+      await this.#server.control(fragment, request, {props});
       return;
     };
 
@@ -44,29 +44,23 @@ export class Loader {
 
     if (fragmentJS?.control) {
       // Run the control hook
-      await this.#runtime.control(fragmentJS.control, request, this)
+      await this.#runtime.control(fragmentJS.control, request, this, props);
     };
   };
 
-  async render(fragment, request, {data=null, fragmentElement=document}={}) {
+  async render(fragment, request, {props, fragmentElement=document}={}) {
     // Load a fragment's render hook.
 
     // Get the data from the fragment element if it is not already given
-    if (data === null) {
-      if (fragmentElement.attributes) {
-        data = getData(
-          Array.from(fragmentElement.attributes)
-            .map(attr => [attr.name, attr.value])
-        );
-      } else {
-        data = new Map;
-      };
-    };
+    props ??= fragmentElement.attributes ? 
+      getData(Array.from(fragmentElement.attributes)
+        .map(attr => [attr.name, attr.value])
+      ) : new Map;
 
     // Run the render hook on the server if it is not cached locally or if the fragment has been
     // changed (ie. its HTML needs reloading)
     if (!this.#fragments.has(fragment) || fragmentElement.requiresFetch) {
-      await this.#server.render(fragment, request, {data, fragmentElement});
+      await this.#server.render(fragment, request, {props, fragmentElement});
       return;
     };
 
@@ -75,7 +69,7 @@ export class Loader {
 
     if (fragmentJS?.render) {
       // Run the render hook
-      await this.#runtime.render(fragmentJS.render, request, this, data, {fragmentElement});
+      await this.#runtime.render(fragmentJS.render, request, this, props, {fragmentElement});
     };
 
     // Load child fragments
@@ -87,7 +81,7 @@ export class Loader {
         // Load the new fragment's render hook
         await this.render(name, request, {fragmentElement: elmt.domElement});
       });
-    }, request, this, data, {fragmentElement});
+    }, request, this, props, {fragmentElement});
   };
 
   preLoadJS() {

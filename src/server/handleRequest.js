@@ -58,15 +58,9 @@ export class RequestHandler {
       if (!$DEPLOY_URL) {
         // Don't use the browser cache unless there is an immutable URL for this deployment
         response = await env.ASSETS.fetch(jsRequest)
-        
-        // Ensure headers are mutable
-        response = new Response(response.body, response);
       } else if (url.origin != $DEPLOY_URL) {
         // Redirect to the immutable URL if the request is made on the main domain
         response = Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
-      
-        // Ensure headers are mutable
-        response = new Response(response.body, response);
       } else {
         response = await env.ASSETS.fetch(jsRequest);
         
@@ -87,9 +81,6 @@ export class RequestHandler {
       try {
         const binding = env[url.pathname.split("/")[2]];
         response = await binding.fetch(newRequest);
-
-        // Ensure headers are mutable
-        response = new Response(response.body, response);
       } catch (e) {
         response = new Response("500 Internal Server Error", {status: 500});
       };
@@ -132,6 +123,9 @@ export class RequestHandler {
 
       response = addFinishingTouches(request, response);
     };
+        
+    // Ensure headers are mutable
+    response = new Response(response.body, response);
 
     // Allow CORS from allowed domains
     const origin = jsRequest.headers.get("Origin");

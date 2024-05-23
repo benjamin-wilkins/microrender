@@ -19,7 +19,7 @@ async function control ($) {
   await $.pass("visit-counter")
 
   if (!$.title()) {
-    $.title("Home");
+    $.title(`Home / Prop message ${$.props("msg")}`);
   };
 };
 
@@ -30,7 +30,7 @@ async function render ($) {
   backendMsg = await backendMsg.text();
   
   $("#home-backend-msg", (elmt) => {elmt.text(backendMsg)});
-  $("#home-attr-msg", (elmt) => {elmt.text($.data("msg"))});
+  $("#home-attr-msg", (elmt) => {elmt.text($.props("msg"))});
 };
 
 export const server = {render, control};
