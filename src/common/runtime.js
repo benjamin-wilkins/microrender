@@ -258,7 +258,7 @@ export class Control$ extends Base$ {
   async pass(fragment, props={}) {
     // Run another fragment's control hook.
 
-    props = new Map(Object.entries(props));
+    props = props instanceof Map ? props : new Map(Object.entries(props));
 
     await this.#loader.control(fragment, this.#request, {props});
   };
