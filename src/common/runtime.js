@@ -156,7 +156,8 @@ class Base$ extends ExtendableFunction {
   props(prop) {
     // Get properties for the fragment - either from the <microrender-fragment>'s data-* attributes or
     // from the `$.pass()` function.
-    return this.#props.get(prop);
+
+    return prop == null ? this.#props : this.#props.get(prop);
   };
 
   #props;
