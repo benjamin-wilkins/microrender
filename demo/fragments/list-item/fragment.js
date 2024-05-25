@@ -1,5 +1,5 @@
 /*
-  This file is part of MicroRender, a basic rendering framework.
+  This file is part of a demo of MicroRender, a basic rendering framework.
   Copyright (C) 2023-2024 Benjamin Wilkins
 
   MicroRender is free software: you can redistribute it and/or modify it under the terms of the
@@ -14,10 +14,13 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export const server = {
-  render ($) {
-    const requestData = $._reqString().replace("</script", "</scr\\ipt");
-  
-    $("script#__microrender_initial-request", (elmt) => {elmt.text(requestData)})
-  }
+function render($) {
+  const id = $.props("id");
+  const randint = $.props("randint");
+
+  $(".list-item-id", elmt => {elmt.text(id)});
+  $(".list-item-randint", elmt => {elmt.text(randint)});
 };
+
+export const server = {render};
+export const browser = {render};

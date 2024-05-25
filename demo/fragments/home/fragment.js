@@ -14,7 +14,7 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-async function control ($) {
+async function control($) {
   await $.pass("form");
   await $.pass("visit-counter")
 
@@ -23,14 +23,14 @@ async function control ($) {
   };
 };
 
-async function render ($) {
-  $("#fragment2-message1", (elmt) => {elmt.text("Set by home fragment")});
+async function render($) {
+  $("#fragment2-message1", elmt => {elmt.text("Set by home fragment")});
 
   let backendMsg = await $.fetch("binding:backend/");
   backendMsg = await backendMsg.text();
   
-  $("#home-backend-msg", (elmt) => {elmt.text(backendMsg)});
-  $("#home-attr-msg", (elmt) => {elmt.text($.props("msg"))});
+  $("#home-backend-msg", elmt => {elmt.text(backendMsg)});
+  $("#home-attr-msg", elmt => {elmt.text($.props("msg"))});
 };
 
 export const server = {render, control};

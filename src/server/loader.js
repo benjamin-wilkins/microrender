@@ -14,8 +14,6 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { getData } from "../common/helpers.js";
-
 export class Loader {
   // Hook loader passed to *Request.handle().
 
@@ -48,28 +46,13 @@ export class Loader {
     // Get the fragment HTML from cloudflare pages
     let response = await request.env.ASSETS.fetch(`http://fakehost/fragments/${fragment}`);
 
+    // Ensure headers are mutable
+    response = new Response(response.body, response);
+
     if (fragmentJS.render) {
       // Run the render hook
       response = await this.#runtime.render(fragmentJS.render, request, this, props, {response});
     };
-
-    // Load child fragments
-    response = await this.#runtime.render(($) => {
-      $("microrender-fragment", async (elmt) => {
-        // Get fragment info
-        const name = elmt.attr("name");
-        const props = getData(elmt.rewriterElement.attributes);
-
-        // Load the new fragment's render hook
-        let newFragment = await this.render(name, request, {props});
-
-        // Add the sub-fragment into the page
-        // NOTE: LOL-HTML (HTMLRewriter) does not currently support streaming into innerContent. This may
-        // change in future, and at this point .text() should be removed.
-        newFragment = await newFragment.text();
-        elmt.html(newFragment);
-      })
-    }, request, this, props, {response});
 
     for (const [header, value] of headers) {
       response.headers.set(header, value);
