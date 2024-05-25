@@ -71,6 +71,8 @@ These are HTML and CSS APIs for defining and using fragments.
 |-----------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | HTML `<microrender-fragment name="">`                                 | Embed another fragment within this fragment.                                              |
 | HTML `name="microrender:js"`                                          | Add the browser JS to the page.                                                           |
+| HTML `name="microrender:ol"`                                          | Create a dynamic list using a `<ol>` tag.                                                 |
+| HTML `name="microrender:ul"`                                          | Create a dynamic list using a `<ul>` tag.                                                 |
 | HTML `data-*=""`                                                      | Add parameters to a fragment. These can be accessed in the `render` hook using `$.data`.  |
 | HTML `microrender-timeout=""`                                         | Refresh the fragment after the timeout. Only calls the `control` hook.                    |
 | CSS `:states(--requires-fetch)` (`.state--requires-fetch` polyfill)   | CSS selector for fragments that need to be fetched from the server.                       |
