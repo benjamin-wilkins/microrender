@@ -78,8 +78,8 @@ class RenderStrategy extends BaseStrategy {
     await Promise.all(
       this.#transforms.map(
         ([selector, handler]) => Promise.all(
-          // Get matching elements
-          [...fragmentElement.querySelectorAll(`:scope ${selector}`)]
+          // Get matching elements that are not children of another fragment
+          [...fragmentElement.querySelectorAll(`:scope ${selector}:not(:scope microrender-fragment *)`)]
             // Run the handler
             .map(domElement => handler.element(domElement))
         )
@@ -111,6 +111,15 @@ export class Runtime {
 
     // Run the JS
     await fn($);
+
+    // Add handler for `microrender-fragment` elements
+    $("microrender-fragment", async elmt => {
+      // Get fragment info
+      const name = elmt.attr("name");
+
+      // Load the new fragment's render hook
+      await loader.render(name, request, {fragmentElement: elmt.domElement});
+    });
 
     // Transform the DOM
     return $._transform(fragmentElement);

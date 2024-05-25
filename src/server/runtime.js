@@ -16,6 +16,7 @@
 
 import { Control$, Render$ } from "../common/runtime.js";
 import { ElementHandler } from "./element.js"
+import { getData } from "../common/helpers.js";
 
 class BaseStrategy {
   // Strategy passed to the $ constructor. Contains runtime-specific methods common to all hooks.
@@ -129,6 +130,22 @@ export class Runtime {
 
     // Run the JS
     await fn($);
+
+    // Add handler for `microrender-fragment` elements
+    $("microrender-fragment", async elmt => {
+      // Get fragment info
+      const name = elmt.attr("name");
+      const props = getData(elmt.rewriterElement.attributes);
+
+      // Load the new fragment's render hook
+      let newFragment = await loader.render(name, request, {props});
+
+      // Add the sub-fragment into the page
+      // NOTE: LOL-HTML (HTMLRewriter) does not currently support streaming into innerContent. This may
+      // change in future, and at this point .text() should be removed.
+      newFragment = await newFragment.text();
+      elmt.html(newFragment);
+    });
 
     // Transform the HTML
     return $._transform(response);

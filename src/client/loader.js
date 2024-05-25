@@ -71,17 +71,6 @@ export class Loader {
       // Run the render hook
       await this.#runtime.render(fragmentJS.render, request, this, props, {fragmentElement});
     };
-
-    // Load child fragments
-    await this.#runtime.render(($) => {
-      $("microrender-fragment", async (elmt) => {
-        // Get fragment info
-        const name = elmt.attr("name");
-
-        // Load the new fragment's render hook
-        await this.render(name, request, {fragmentElement: elmt.domElement});
-      });
-    }, request, this, props, {fragmentElement});
   };
 
   preLoadJS() {

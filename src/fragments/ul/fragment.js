@@ -14,10 +14,7 @@
   If not, see <https://www.gnu.org/licenses/>.
 */
 
-export const server = {
-  render ($) {
-    const requestData = $._reqString().replace("</script", "</scr\\ipt");
-  
-    $("script#__microrender_initial-request", (elmt) => {elmt.text(requestData)})
-  }
-};
+import { Server, Browser } from "../list";
+
+export const server = /* @__PURE__ */ new Server("ul");
+export const browser = /* @__PURE__ */ new Browser("ul");

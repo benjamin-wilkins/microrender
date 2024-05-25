@@ -1,4 +1,4 @@
-/*
+<!--
   This file is part of MicroRender, a basic rendering framework.
   Copyright (C) 2023-2024 Benjamin Wilkins
 
@@ -12,12 +12,6 @@
 
   You should have received a copy of the GNU Lesser General Public License along with MicroRender.
   If not, see <https://www.gnu.org/licenses/>.
-*/
+-->
 
-export const server = {
-  render ($) {
-    const requestData = $._reqString().replace("</script", "</scr\\ipt");
-  
-    $("script#__microrender_initial-request", (elmt) => {elmt.text(requestData)})
-  }
-};
+<ul></ul>
