@@ -117,17 +117,40 @@ export class ServerLoader {
       // Skip if a socket is already open
       if (this.#socket) return;
 
+      // If a socket is in the process of connecting, await it and return
+      if (this.#socketBlock) {
+        await this.#socketBlock;
+        return;
+      };
+
+      // Create a promise while the socket connects to block other websocket users
+      let unblock;
+      this.#socketBlock = new Promise(resolve => {
+        unblock = resolve;
+      });
+
       // Open a websocket
       this.#socket = await new newWebSocket(`${$DEPLOY_URL || ""}/_websocket`);
-      this.#nextId = 0;
+      this.#socketHandlers = new Map;
 
       // Delete the socket object when the socket is closed
       this.#socket.addEventListener("close", () => {
         this.#socket = null;
-      })
+        this.#socketBlock = null;
+      });
+
+      // Create a message event handler to pass responses back to the correct fetch() call
+      this.#socket.addEventListener("message", event => {
+        const {id, ...response} = deserialise(event.data);
+        this.#socketHandlers.get(id)(response);
+        this.#socketHandlers.delete(id);
+      });
 
       // Send the request over the websocket
       this.#socket.send(request.serialise());
+
+      // Allow the socket to be used
+      unblock();
     };
 
     closeSocket() {
@@ -142,29 +165,21 @@ export class ServerLoader {
       await this.#openSocket(request);
 
       // Get a unique ID for the request
-      const id = this.#nextId++;
+      const id = crypto.randomUUID();
 
       return new Promise((resolve, reject) => {
-        this.#socket.addEventListener("message", event => {
+        this.#socketHandlers.set(id, response => {
           try {
-            if (!event.deserialised) {
-              event.deserialised = deserialise(event.data);
-              console.log(`Deserialising: id=${event.deserialised.id}`)
-            };
-  
-            const {id: responseId, ...response} = event.deserialised;
-
-            // Is this the correct response?
-            if (id == responseId) resolve(response);
+            resolve(response);
           } catch (e) {
             reject(e);
           };
-        }, {once: true});
+        });
 
         // Throw an error if the request takes more than 1 second
         setTimeout(() => {
-          reject(new TypeError("NetworkError: request timed out"));
-        }, 1000);
+          reject(new TypeError(`NetworkError: request ${id} timed out`));
+        }, 2000);
 
         // Request a fragment over the websocket
         this.#socket.send(serialise({fragment, hook, props, id}));
@@ -172,6 +187,7 @@ export class ServerLoader {
     };
 
     #fragments;
-    #nextId;
     #socket;
+    #socketBlock;
+    #socketHandlers;
   };
