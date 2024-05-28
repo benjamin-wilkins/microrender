@@ -77,6 +77,10 @@ export class Loader {
     return this.#server.preLoadJS(this.#fragments);
   };
 
+  closeSocket() {
+    return this.#server.closeSocket();
+  };
+
   #fragments;
   #runtime;
   #server;

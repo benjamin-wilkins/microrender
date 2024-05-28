@@ -195,7 +195,7 @@ export function deserialise(string, locals={}) {
   return load(JSON.parse(string));
 };
 
-export function tryCatch(tryFn, catchFn, {retries=5}={}) {
+export function tryCatch(tryFn, catchFn, {retries=3}={}) {
   // Try running tryFn, but if an error is thrown recursively call catchFn until an error
   // is not thrown.
   // tryFn and catchFn should have the same return type.
@@ -215,7 +215,7 @@ export function tryCatch(tryFn, catchFn, {retries=5}={}) {
   };
 };
 
-export async function tryCatchAsync(tryFn, catchFn, {retries=5}={}) {
+export async function tryCatchAsync(tryFn, catchFn, {retries=3}={}) {
   // Try running and awaiting tryFn, but if an error is thrown recursively call catchFn until an error
   // is not thrown.
   // tryFn and catchFn should have the same return type.
@@ -233,6 +233,16 @@ export async function tryCatchAsync(tryFn, catchFn, {retries=5}={}) {
     // Call catchFn with e as an argument inside another tryCatch.
     return await tryCatchAsync(() => catchFn(e), catchFn, {retries});
   };
+};
+
+export function newWebSocket(url, protocols) {
+  // Wrap the WebSocket constructor by returning a promise that resolves when the websocket is open.
+
+  return new Promise(resolve => {
+    const socket = new WebSocket(url, protocols);
+
+    socket.addEventListener("open", () => resolve(socket));
+  });
 };
 
 export class ExtendableFunction extends Function {

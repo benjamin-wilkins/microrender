@@ -21,16 +21,12 @@ export class FragmentRequest {
   // and extends its interface with fragment-specific properties like `fragment` and `hook`. In most
   // cases a FragmentRequest should be treated exactly the same as a MicroRenderRequest object.
 
-  constructor(request, httpUrl, {env, props=new Map}) {
+  constructor(request, fragment, hook, {env, props=new Map}) {
     // The underlying MicroRenderRequest for this FragmentRequest
     this.#request = request;
 
-    // Use the URL API instead of just strings
-    httpUrl = new URL(httpUrl);
-
-    // Parse the httpUrl to get the fragment and hook
-    this.#fragment = httpUrl.pathname.split("/")[2];
-    this.#hook = httpUrl.pathname.split("/")[3];
+    this.#fragment = fragment;
+    this.#hook = hook;
 
     // The props of the fragment being requested
     this.#props = props;
@@ -39,24 +35,21 @@ export class FragmentRequest {
     Object.defineProperty(this, "env", {value: env});
   };
 
-  static async read(jsRequest, {env}) {
+  static async read(jsRequest) {
     // Create a FragmentRequest object from a JS Request object.
 
     // Deserialise the underlying MicroRenderRequest object from the `MicroRender-Request` HTTP header.
     const request = MicroRenderRequest.deserialise(jsRequest.headers.get("MicroRender-Request"));
 
+    `
     // Add the formData to the request from the fragment request body
     if (jsRequest.method == "POST" && jsRequest.headers.get("Content-Type").includes("form")) {
       request.formData = await jsRequest.formData();
     };
-
-    // Deserialise the fragment element's props
-    const props = jsRequest.headers.has("MicroRender-Props")
-      ? new Map(JSON.parse(jsRequest.headers.get("MicroRender-Props")))
-      : null;
+    `
 
     // Create a FragmentRequest object
-    return new FragmentRequest(request, jsRequest.url, {props, env});
+    return request;
   };
 
   serialise() {
@@ -89,16 +82,7 @@ export class FragmentRequest {
   async redirect(loader, location, status) {
     // Handle a Redirect interrupt
 
-    // The browser fetch API doesn't support capturing reedirect events for security reasons.
-    // Therefore wrap the redirect in a 204 response to indicate that a redirect has occured.
-
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "MicroRender-Status": status,
-        "MicroRender-Location": location
-      }
-    });
+    return Response.redirect(location, status)
   };
 
   async error(loader, status) {
@@ -129,9 +113,6 @@ export class FragmentRequest {
 
   get geolocation() {return this.#request.geolocation};
   set geolocation(value) {this.#request.geolocation = value};
-
-  // Header name for setting cookies. Used for CORS to allow immutable URLs.
-  setCookie = "MicroRender-Set-Cookie";
 
   #fragment;
   #hook;

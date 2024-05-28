@@ -16,6 +16,7 @@
 
 import { MicroRenderRequest } from "../common/request.js";
 import { HTTPError, Redirect } from "../common/error.js";
+import { deserialise, newWebSocket, serialise } from "../common/helpers.js";
 
 export class ServerLoader {
     // Hook loader for loading fragments that are not already partially loaded on the client.
@@ -28,31 +29,17 @@ export class ServerLoader {
     async control(fragment, request, {props}) {
       // Load a fragment's control hook from the server.
   
-      // Create a request for the server
-      const jsRequest = new Request(
-        `${$DEPLOY_URL || ""}/_fragment/${fragment}/control`,
-        {
-          method: request.formData ? "POST" : "GET",
-          body: request.formData,
-          headers: {
-            "MicroRender-Request": request.serialise(),
-            "MicroRender-Props": JSON.stringify(Array.from(props))
-          }
-        }
-      );
-  
       // Request the server to load the fragment
-      const response = await fetch(jsRequest);
+      const response = await this.#fetch(request, fragment, "control", props);
   
-      if (response.status == 204) {
-        // Redirect response that has been wrapped
+      if (300 <= response.status && response.status <= 399) {
+        // Redirect response
   
         // Read headers
         const location = response.headers.get("MicroRender-Location");
-        const status = parseInt(response.headers.get("MicroRender-Status"));
   
-        throw new Redirect(location, status);
-      } else if (response.ok) {
+        throw new Redirect(location, response.status);
+      } else if (200 <= response.status <= 299) {
         // Standard response
   
         // Read headers
@@ -63,7 +50,6 @@ export class ServerLoader {
         Object.assign(request, updatedRequest);
       } else {
         // Error response
-  
         throw new HTTPError(response.status);
       };
 
@@ -78,30 +64,19 @@ export class ServerLoader {
     async render(fragment, request, {props, fragmentElement}) {
       // Load a fragment's render hook from the server
   
-      // Create a request for the server
-      const jsRequest = new Request(
-        `${$DEPLOY_URL || ""}/_fragment/${fragment}/render`,
-        {
-          headers: {
-            "MicroRender-Request": request.serialise(),
-            "MicroRender-Props": JSON.stringify(Array.from(props))
-          }
-        }
-      );
-  
       // Request the server to load the fragment
-      const response = await fetch(jsRequest);
+      const response = await this.#fetch(request, fragment, "render", props);
   
-      if (response.ok)  {
+      if (200 <= response.status <= 299)  {
         // Standard response
   
-        fragmentElement.innerHTML = await response.text();
+        fragmentElement.innerHTML = response.body;
         fragmentElement.requiresFetch = false;
       } else {
         // Error response
         // Shouldn't ever happen, but in case something goes wrong somewhere else 
       
-        throw new HTTPError(response.status);
+        throw new TypeError(`NetworkError: ${response.status} status returned unexpectedly`);
       };
     };
   
@@ -136,5 +111,67 @@ export class ServerLoader {
       return Promise.all(fragmentPromises);
     };
 
+    async #openSocket(request) {
+      // Open a websocket for requesting fragments.
+
+      // Skip if a socket is already open
+      if (this.#socket) return;
+
+      // Open a websocket
+      this.#socket = await new newWebSocket(`${$DEPLOY_URL || ""}/_websocket`);
+      this.#nextId = 0;
+
+      // Delete the socket object when the socket is closed
+      this.#socket.addEventListener("close", () => {
+        this.#socket = null;
+      })
+
+      // Send the request over the websocket
+      this.#socket.send(request.serialise());
+    };
+
+    closeSocket() {
+      // Close the websocket if one is open.
+      this.#socket?.close?.();
+    };
+
+    async #fetch(request, fragment, hook, props) {
+      // Fetch a fragment over the websocket
+
+      // Open a websocket if there is not already one open
+      await this.#openSocket(request);
+
+      // Get a unique ID for the request
+      const id = this.#nextId++;
+
+      return new Promise((resolve, reject) => {
+        this.#socket.addEventListener("message", event => {
+          try {
+            if (!event.deserialised) {
+              event.deserialised = deserialise(event.data);
+              console.log(`Deserialising: id=${event.deserialised.id}`)
+            };
+  
+            const {id: responseId, ...response} = event.deserialised;
+
+            // Is this the correct response?
+            if (id == responseId) resolve(response);
+          } catch (e) {
+            reject(e);
+          };
+        }, {once: true});
+
+        // Throw an error if the request takes more than 1 second
+        setTimeout(() => {
+          reject(new TypeError("NetworkError: request timed out"));
+        }, 1000);
+
+        // Request a fragment over the websocket
+        this.#socket.send(serialise({fragment, hook, props, id}));
+      });
+    };
+
     #fragments;
+    #nextId;
+    #socket;
   };

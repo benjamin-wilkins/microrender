@@ -99,7 +99,7 @@ export class MicroRenderRequest {
     // Create a `Response` object. On the server side, this can be sent straight to the client as
     // with any other response, but on the client runtime it should be caught by the request handler
     // to enact the new request.
-    return Response.redirect(location, status, {request: this});
+    return Response.redirect(location, status);
   };
 
   async error(loader, status) {
@@ -121,7 +121,4 @@ export class MicroRenderRequest {
   };
 
   formData = null;
-
-  // Header name for setting cookies. Used by server
-  setCookie = "Set-Cookie";
 };

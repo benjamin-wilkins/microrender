@@ -52,11 +52,14 @@ export class RequestHandler {
       // Pass control to the request to handle itself
       () => request.handle(this.#loader),
       // If e has a `catch` method, call it. Otherwise, create an HTTPError after logging the error
-      (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
+      e => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
     ).catch(
       // Retry limit exceeded
-      () => document.documentElement.innerText = "500 Internal Server Error"
+      () => document.body.innerText = "500 Internal Server Error"
     );
+
+    // Close this request's websocket if it has been opened
+    this.#loader.closeSocket();
 
     // Store the last request to allow timeouts
     this.#lastRequest = request;
