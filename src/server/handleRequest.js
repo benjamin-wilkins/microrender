@@ -105,6 +105,8 @@ export class RequestHandler {
   async #asset(jsRequest, env) {
     // Get an asset from cloudflare pages.
 
+    const url = new URL(jsRequest.url);
+
     if (!$DEPLOY_URL) {
       // Don't use the browser cache unless there is an immutable URL for this deployment
       return await env.ASSETS.fetch(jsRequest)
