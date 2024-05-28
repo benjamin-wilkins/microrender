@@ -117,7 +117,7 @@ export class RequestHandler {
       return Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
     };
 
-    response = await env.ASSETS.fetch(jsRequest);
+    let response = await env.ASSETS.fetch(jsRequest);
     
     // Ensure headers are mutable
     response = new Response(response.body, response);
