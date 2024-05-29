@@ -49,16 +49,16 @@ export class RequestHandler {
     );
     
     const response = await tryCatchAsync(
-      () => {
+      async () => {
         // Pass control to the request to handle itself
-        request.handle(this.#loader)
+        return await request.handle(this.#loader)
       },
-      e => {
+      async e => {
         // Close any open websocket
         this.#loader.closeSocket();
 
         // If e has a `catch` method, call it. Otherwise, create an HTTPError after logging the error
-        (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
+        return await (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
       }
     ).catch(
       () => {
