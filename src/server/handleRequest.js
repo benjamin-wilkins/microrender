@@ -15,7 +15,7 @@
 */
 
 import { HTTPError } from "../common/error.js";
-import { parseQ, tryCatchAsync, serialise } from "../common/helpers.js";
+import { parseQ, tryCatchAsync, serialise, deserialise } from "../common/helpers.js";
 import { MicroRenderRequest } from "../common/request.js";
 import { FragmentRequest } from "./fragmentRequest.js";
 import { addFinishingTouches } from "./finishingTouches.js";
@@ -52,78 +52,37 @@ export class RequestHandler {
     const url = new URL(jsRequest.url);
     let response;
 
-    if (url.pathname.startsWith("/assets/")) {
-      // Pass through asset URLs
+    try {
+      if (url.pathname.startsWith("/assets/")) {
+        response = await this.#asset(jsRequest, env);
+      } else if (jsRequest.method == "OPTIONS") {
+        response = new Response;
+      } else if (url.pathname.startsWith("/_websocket")) {
+        response = await this.#websocket(jsRequest, env);
+      } else if (url.pathname.startsWith("/_binding/")) {
+        response = await this.#binding(jsRequest, env);
+      } else if (url.pathname.startsWith("/_location")) {
+        // Get the user's approximate location
 
-      if (!$DEPLOY_URL) {
-        // Don't use the browser cache unless there is an immutable URL for this deployment
-        response = await env.ASSETS.fetch(jsRequest)
-      } else if (url.origin != $DEPLOY_URL) {
-        // Redirect to the immutable URL if the request is made on the main domain
-        response = Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
+        const geolocation = getLocation(jsRequest);
+        response = new Response(serialise(geolocation));
       } else {
-        response = await env.ASSETS.fetch(jsRequest);
-        
-        // Ensure headers are mutable
-        response = new Response(response.body, response);
+        // Standard request
 
-        // Add a long cache duration as this is an immutable asset URL
-        response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
-      };
-    } else if (jsRequest.method == "OPTIONS") {
-      // CORS preflight request
-      response = new Response;
-    } else if (url.pathname.startsWith("/_binding/")) {
-      // Pass binding URLs to the service binding
-
-      const newRequest = new Request(url.searchParams.get("url"), jsRequest);
-
-      try {
-        const binding = env[url.pathname.split("/")[2]];
-        response = await binding.fetch(newRequest);
-      } catch (e) {
-        response = new Response("500 Internal Server Error", {status: 500});
-      };
-
-    } else if (url.pathname.startsWith("/_location")) {
-      // Get the user's approximate location
-
-      const geolocation = getLocation(jsRequest);
-      response = new Response(serialise(geolocation));
-    } else {
-      // Standard request
-
-      // Create a MicroRenderRequest or FragmentRequest object and call its handler
-      let request;
-      
-      if (url.pathname.startsWith("/_fragment/")) {
-        // The client is requesting a single fragment as part of a larger request
-        request = await FragmentRequest.read(
-          jsRequest, {env}
-        );
-      } else {
-        // This is an ordinary request
-        request = await MicroRenderRequest.read(
+        const request = await MicroRenderRequest.read(
           jsRequest, {
             env,
             geolocation: getLocation(jsRequest)
           }
         );
+
+        response = await this.#request(request);
       };
-
-      response = await tryCatchAsync(
-        // Pass control to the request to handle itself
-        () => request.handle(this.#loader),
-        // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
-        (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
-      ).catch(
-        // Retry limit exceeded
-        () => new Response("500 Internal Server Error", {status: 500})
-      );
-
-      response = addFinishingTouches(request, response);
+    } catch (e) {
+      console.error("[MicroRender] Uncaught error", e)
+      response = new Response("500 Internal Server Error", {status: 500});
     };
-        
+
     // Ensure headers are mutable
     response = new Response(response.body, response);
 
@@ -141,6 +100,116 @@ export class RequestHandler {
     response.headers.set("Vary", "Origin");
 
     return response;
+  };
+
+  async #asset(jsRequest, env) {
+    // Get an asset from cloudflare pages.
+
+    const url = new URL(jsRequest.url);
+
+    if (!$DEPLOY_URL) {
+      // Don't use the browser cache unless there is an immutable URL for this deployment
+      return await env.ASSETS.fetch(jsRequest)
+    };
+    
+    if (url.origin != $DEPLOY_URL) {
+      // Redirect to the immutable URL if the request is made on the main domain
+      return Response.redirect(`${$DEPLOY_URL || ""}${url.pathname}${url.search}`);
+    };
+
+    let response = await env.ASSETS.fetch(jsRequest);
+    
+    // Ensure headers are mutable
+    response = new Response(response.body, response);
+
+    // Add a long cache duration as this is an immutable asset URL
+    response.headers.set("Cache-Control", `max-age=${365*24*60*60}, immutable`);
+
+    return response;
+  };
+
+  async #websocket(jsRequest, env) {
+    // Create a websocket for fragment requests.
+
+    if (!jsRequest.headers.has("Upgrade") || jsRequest.headers.get("Upgrade") != "websocket") {
+      // Invalid response
+      return new Response('Expected Upgrade: websocket', { status: 426 });
+    } else {
+      let request = null;
+      let formType;
+
+      // Create websocket
+      const [client, server] = Object.values(new WebSocketPair);
+
+      server.accept();
+
+      server.addEventListener("message", async event => {
+        if (request == null) {
+          // Deserialise the request, which should be sent with the first message
+          
+          ({request, formType} = deserialise(event.data, {MicroRenderRequest}));
+        } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+          // Convert binary to formData, which should be sent with the second message if it exists,
+          // using an intermediate Request object
+
+          request.formData = await (new Request("http://fakehost", {
+            method: "POST",
+            body: event.data,
+            headers: {
+              "Content-Type": formType
+            }
+          })).formData();
+        } else {
+          // Deserialise the fragment data
+          const {fragment, hook, props, id} = deserialise(event.data);
+
+          // Generate a response
+          const fragmentRequest = new FragmentRequest(request, fragment, hook, {props, env});
+          const response = await this.#request(fragmentRequest);
+
+          // Send the response over the websocket
+          const status = response.status;
+          const headers = response.headers;
+          const body = await response.text();
+
+          server.send(serialise({id, status, headers, body}));
+        };
+      });
+
+      server.addEventListener("close", () => server.close());
+
+      // Send the client websocket back in the response
+      return new Response(null, {
+        status: 101,
+        webSocket: client
+      });
+    };
+  };
+
+  async #binding(jsRequest, env) {
+    // Fetch a request from a service binding.
+
+    const url = new URL(jsRequest.url);
+    const newRequest = new Request(url.searchParams.get("url"), jsRequest);
+
+    const binding = env[url.pathname.split("/")[2]];
+    return await binding.fetch(newRequest);
+  };
+
+  async #request(request) {
+    // Fetch a MicroRenderRequest or a FragmentRequest
+
+    const response = await tryCatchAsync(
+      // Pass control to the request to handle itself
+      () => request.handle(this.#loader),
+      // If e has a `catch` method, call it. Otherwise, create a 500 HTTPError after logging the error
+      (e) => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
+    ).catch(
+      // Retry limit exceeded
+      () => new Response("500 Internal Server Error", {status: 500})
+    );
+
+    return addFinishingTouches(request, response);
   };
 
   #loader;

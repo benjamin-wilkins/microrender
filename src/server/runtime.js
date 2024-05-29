@@ -56,34 +56,16 @@ class ControlStrategy extends BaseStrategy {
   constructor(request, {headers}) {
     super(request);
 
-    this.#request = request;
     this.#headers = headers;
   }
 
   doSetCookie(cookieString) {
     // Set a cookie using HTTP headers.
 
-    const setCookie = this.#request.setCookie;
-
-    if (setCookie == "Set-Cookie") {
-      this.#headers.append("Set-Cookie", cookieString);
-    } else {
-      // Set-Cookie is an exception to other HTTP headers as it cannot be safely merged. This means
-      // that it has unusual behaviour in the fetch spec, including Headers.append creating a new
-      // header for Set-Cookie and Header.getSetCookie to retrieve these headers separately.
-      
-      // As we cannot use Set-Cookie in CORS requests, MicroRender uses a different header. This
-      // header consequently also has to use JSON syntax to store an array of cookie strings,
-      // representing what each individual Set-Cookie header would be.
-
-      const cookies = JSON.parse(this.#headers.get(setCookie) || "[]");
-      cookies.push(cookieString);
-      this.#headers.set(setCookie, JSON.stringify(cookies));
-    };
+    this.#headers.append("Set-Cookie", cookieString);
   };
 
   #headers;
-  #request;
 };
 
 class RenderStrategy extends BaseStrategy {

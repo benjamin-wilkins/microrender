@@ -16,6 +16,7 @@
 
 import { MicroRenderRequest } from "../common/request.js";
 import { HTTPError, Redirect } from "../common/error.js";
+import { deserialise, newWebSocket, serialise } from "../common/helpers.js";
 
 export class ServerLoader {
     // Hook loader for loading fragments that are not already partially loaded on the client.
@@ -28,31 +29,17 @@ export class ServerLoader {
     async control(fragment, request, {props}) {
       // Load a fragment's control hook from the server.
   
-      // Create a request for the server
-      const jsRequest = new Request(
-        `${$DEPLOY_URL || ""}/_fragment/${fragment}/control`,
-        {
-          method: request.formData ? "POST" : "GET",
-          body: request.formData,
-          headers: {
-            "MicroRender-Request": request.serialise(),
-            "MicroRender-Props": JSON.stringify(Array.from(props))
-          }
-        }
-      );
-  
       // Request the server to load the fragment
-      const response = await fetch(jsRequest);
+      const response = await this.#fetch(request, fragment, "control", props);
   
-      if (response.status == 204) {
-        // Redirect response that has been wrapped
+      if (300 <= response.status && response.status <= 399) {
+        // Redirect response
   
         // Read headers
         const location = response.headers.get("MicroRender-Location");
-        const status = parseInt(response.headers.get("MicroRender-Status"));
   
-        throw new Redirect(location, status);
-      } else if (response.ok) {
+        throw new Redirect(location, response.status);
+      } else if (200 <= response.status <= 299) {
         // Standard response
   
         // Read headers
@@ -63,7 +50,6 @@ export class ServerLoader {
         Object.assign(request, updatedRequest);
       } else {
         // Error response
-  
         throw new HTTPError(response.status);
       };
 
@@ -78,30 +64,19 @@ export class ServerLoader {
     async render(fragment, request, {props, fragmentElement}) {
       // Load a fragment's render hook from the server
   
-      // Create a request for the server
-      const jsRequest = new Request(
-        `${$DEPLOY_URL || ""}/_fragment/${fragment}/render`,
-        {
-          headers: {
-            "MicroRender-Request": request.serialise(),
-            "MicroRender-Props": JSON.stringify(Array.from(props))
-          }
-        }
-      );
-  
       // Request the server to load the fragment
-      const response = await fetch(jsRequest);
+      const response = await this.#fetch(request, fragment, "render", props);
   
-      if (response.ok)  {
+      if (200 <= response.status <= 299)  {
         // Standard response
   
-        fragmentElement.innerHTML = await response.text();
+        fragmentElement.innerHTML = response.body;
         fragmentElement.requiresFetch = false;
       } else {
         // Error response
         // Shouldn't ever happen, but in case something goes wrong somewhere else 
       
-        throw new HTTPError(response.status);
+        throw new TypeError(`NetworkError: ${response.status} status returned unexpectedly`);
       };
     };
   
@@ -136,5 +111,97 @@ export class ServerLoader {
       return Promise.all(fragmentPromises);
     };
 
+    async #openSocket(request) {
+      // Open a websocket for requesting fragments.
+
+      // Skip if a socket is already open
+      if (this.#socket) return;
+
+      // If a socket is in the process of connecting, await it and return
+      if (this.#socketBlock) {
+        await this.#socketBlock;
+        return;
+      };
+
+      // Create a promise while the socket connects to block other websocket users
+      let unblock;
+      this.#socketBlock = new Promise(resolve => {
+        unblock = resolve;
+      });
+
+      // Open a websocket
+      this.#socket = await new newWebSocket(`${$DEPLOY_URL || ""}/_websocket`);
+      this.#socketHandlers = new Map;
+
+      // Delete the socket object when the socket is closed
+      this.#socket.addEventListener("close", () => {
+        this.#socket = null;
+        this.#socketBlock = null;
+      });
+
+      // Create a message event handler to pass responses back to the correct fetch() call
+      this.#socket.addEventListener("message", event => {
+        const {id, ...response} = deserialise(event.data);
+        this.#socketHandlers.get(id)(response);
+        this.#socketHandlers.delete(id);
+      });
+
+      if (request.formData) {
+        // Convert the formData to binary using an intermediate request object
+        const formBlob = await (new Request("/", {
+          method: "POST",
+          body: request.formData
+        })).blob();
+        
+        // Send the request over the websocket
+        this.#socket.send(serialise({request, formType: formBlob.type}, {MicroRenderRequest}));
+
+        // Send the binary formData
+        this.#socket.send(formBlob);
+      } else {
+        // Send the request over the websocket
+        this.#socket.send(serialise({request, formType: null}, {MicroRenderRequest}));
+      };
+
+      // Allow the socket to be used
+      unblock();
+    };
+
+    closeSocket() {
+      // Close the websocket if one is open.
+      this.#socket?.close?.();
+    };
+
+    async #fetch(request, fragment, hook, props) {
+      // Fetch a fragment over the websocket
+
+      // Open a websocket if there is not already one open
+      await this.#openSocket(request);
+
+      // Get a unique ID for the request
+      const id = crypto.randomUUID();
+
+      return new Promise((resolve, reject) => {
+        this.#socketHandlers.set(id, response => {
+          try {
+            resolve(response);
+          } catch (e) {
+            reject(e);
+          };
+        });
+
+        // Throw an error if the request takes more than 1 second
+        setTimeout(() => {
+          reject(new TypeError(`NetworkError: request ${id} timed out`));
+        }, 1000);
+
+        // Request a fragment over the websocket
+        this.#socket.send(serialise({fragment, hook, props, id}));
+      });
+    };
+
     #fragments;
+    #socket;
+    #socketBlock;
+    #socketHandlers;
   };
