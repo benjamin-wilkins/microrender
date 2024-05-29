@@ -146,7 +146,6 @@ export class ServerLoader {
         this.#socketHandlers.delete(id);
       });
 
-      console.log(request.formData)
       if (request.formData) {
         // Convert the formData to binary using an intermediate request object
         const formBlob = await (new Request("/", {
@@ -159,7 +158,6 @@ export class ServerLoader {
 
         // Send the binary formData
         this.#socket.send(formBlob);
-        console.log("Sent", formBlob)
       } else {
         // Send the request over the websocket
         this.#socket.send(serialise({request, formType: null}, {MicroRenderRequest}));

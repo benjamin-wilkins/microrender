@@ -37,7 +37,6 @@ export class MicroRenderRequest {
 
     // Ensure `formData` is not serialised as it may contain files so needs serialising separately
     Object.defineProperty(this, "formData", {value: formData, enumerable: false});
-    console.log(this.formData)
 
     // Parse the 'Cookie' header
     this.cookies = cookies ?
