@@ -15,7 +15,7 @@
 */
 
 import { MicroRenderRequest } from "../common/request.js";
-import { tryCatchAsync } from "../common/helpers.js";
+import { serialise, deserialise, tryCatchAsync } from "../common/helpers.js";
 import { HTTPError } from "../common/error.js";
 
 export class RequestHandler {
@@ -49,23 +49,29 @@ export class RequestHandler {
     );
     
     const response = await tryCatchAsync(
-      // Pass control to the request to handle itself
-      () => request.handle(this.#loader),
-      // If e has a `catch` method, call it. Otherwise, create an HTTPError after logging the error
-      e => (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
+      () => {
+        // Pass control to the request to handle itself
+        request.handle(this.#loader)
+      },
+      e => {
+        // Close any open websocket
+        this.#loader.closeSocket();
+
+        // If e has a `catch` method, call it. Otherwise, create an HTTPError after logging the error
+        (e.catch || console.error("[MicroRender]", e) || new HTTPError(500).catch)(this.#loader, request)
+      }
     ).catch(
-      // Retry limit exceeded
-      () => document.body.innerText = "500 Internal Server Error"
+      () => {
+        // Retry limit exceeded
+        document.body.innerText = "500 Internal Server Error"
+      }
     );
 
     // Close this request's websocket if it has been opened
     this.#loader.closeSocket();
 
-    // Store the last request to allow timeouts
-    this.#lastRequest = request;
-
-    // Remove `formData` from the request so it cannot be called by a timeout.
-    this.#lastRequest.formData = null;
+    // Store the last request to allow timeouts - clone by serialisation for consistency
+    this.#lastRequest = deserialise(serialise(request, {MicroRenderRequest}), {MicroRenderRequest});
 
     if (response && response.status) {
       // Further action may be required

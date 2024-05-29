@@ -136,6 +136,7 @@ export class RequestHandler {
       return new Response('Expected Upgrade: websocket', { status: 426 });
     } else {
       let request = null;
+      let formType;
 
       // Create websocket
       const [client, server] = Object.values(new WebSocketPair);
@@ -143,12 +144,29 @@ export class RequestHandler {
       server.accept();
 
       server.addEventListener("message", async event => {
+        console.log("Received", event.data)
+
         if (request == null) {
           // Deserialise the request, which should be sent with the first message
-          request = MicroRenderRequest.deserialise(event.data);
+          ({request, formType} = deserialise(event.data, {MicroRenderRequest}));
+          console.log("Initialising websocket - recieved request", request, formType)
+        } else if (event.data instanceof ArrayBuffer || event.data instanceof Blob) {
+          // Convert binary to formData, which should be sent with the second message if it exists,
+          // using an intermediate Request object
+          request.formData = await (new Request("http://fakehost", {
+            method: "POST",
+            body: event.data,
+            headers: {
+              "Content-Type": formType
+            }
+          })).formData();
+
+          console.log("Initialising websocket - recieved formData", request.formData)
         } else {
           // Deserialise the fragment data
           const {fragment, hook, props, id} = deserialise(event.data);
+
+          console.log(`Running: ${fragment}/${hook}`)
 
           // Generate a response
           const fragmentRequest = new FragmentRequest(request, fragment, hook, {props, env});

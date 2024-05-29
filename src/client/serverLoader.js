@@ -146,8 +146,24 @@ export class ServerLoader {
         this.#socketHandlers.delete(id);
       });
 
-      // Send the request over the websocket
-      this.#socket.send(request.serialise());
+      console.log(request.formData)
+      if (request.formData) {
+        // Convert the formData to binary using an intermediate request object
+        const formBlob = await (new Request("/", {
+          method: "POST",
+          body: request.formData
+        })).blob();
+        
+        // Send the request over the websocket
+        this.#socket.send(serialise({request, formType: formBlob.type}, {MicroRenderRequest}));
+
+        // Send the binary formData
+        this.#socket.send(formBlob);
+        console.log("Sent", formBlob)
+      } else {
+        // Send the request over the websocket
+        this.#socket.send(serialise({request, formType: null}, {MicroRenderRequest}));
+      };
 
       // Allow the socket to be used
       unblock();
@@ -179,7 +195,7 @@ export class ServerLoader {
         // Throw an error if the request takes more than 1 second
         setTimeout(() => {
           reject(new TypeError(`NetworkError: request ${id} timed out`));
-        }, 2000);
+        }, 1000);
 
         // Request a fragment over the websocket
         this.#socket.send(serialise({fragment, hook, props, id}));

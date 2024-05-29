@@ -35,23 +35,6 @@ export class FragmentRequest {
     Object.defineProperty(this, "env", {value: env});
   };
 
-  static async read(jsRequest) {
-    // Create a FragmentRequest object from a JS Request object.
-
-    // Deserialise the underlying MicroRenderRequest object from the `MicroRender-Request` HTTP header.
-    const request = MicroRenderRequest.deserialise(jsRequest.headers.get("MicroRender-Request"));
-
-    `
-    // Add the formData to the request from the fragment request body
-    if (jsRequest.method == "POST" && jsRequest.headers.get("Content-Type").includes("form")) {
-      request.formData = await jsRequest.formData();
-    };
-    `
-
-    // Create a FragmentRequest object
-    return request;
-  };
-
   serialise() {
     // Serialise the underlying MicroRenderRequest object.
     return this.#request.serialise();
