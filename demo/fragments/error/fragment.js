@@ -19,7 +19,7 @@ async function control ($) {
 };
 
 async function render ($) {
-  $("#error-code", (elmt) => {elmt.text(`Error ${$.error()}`)});
+  $("#error-code", elmt => elmt.text(`Error ${$.error()}`));
 };
 
 export const server = {render, control};

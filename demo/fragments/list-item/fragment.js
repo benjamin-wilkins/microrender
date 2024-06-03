@@ -18,8 +18,8 @@ function render($) {
   const id = $.props("id");
   const randint = $.props("randint");
 
-  $(".list-item-id", elmt => {elmt.text(id)});
-  $(".list-item-randint", elmt => {elmt.text(randint)});
+  $(".list-item-id", elmt => elmt.text(id));
+  $(".list-item-randint", elmt => elmt.text(randint));
 };
 
 export const server = {render};

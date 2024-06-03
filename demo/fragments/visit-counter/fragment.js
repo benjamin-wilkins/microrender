@@ -21,14 +21,13 @@ async function control ($) {
     visits = 0;
   };
 
-  ++visits;
-  $.cookie("visits", visits, {"max-age": 60*60*24*365});
+  $.cookie("visits", ++visits, {"max-age": 31_536_000});
 };
 
 async function render ($) {
   const visits = $.cookie("visits");
 
-  $("#visits-visits", (elmt) => {elmt.text(visits)});
+  $("#visits-visits", elmt => elmt.text(visits));
 };
 
 export const server = {control, render};

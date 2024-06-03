@@ -19,8 +19,8 @@ let lastRendered = new Date();
 async function render ($) {
   const loc = await $.relocate();
 
-  $("#location", (elmt) => {elmt.text(`${loc.city} ${loc.postCode}, ${loc.country}`)});
-  $("#location-tz", (elmt) => {elmt.text($.tz())});
+  $("#location", elmt => elmt.text(`${loc.city} ${loc.postCode}, ${loc.country}`));
+  $("#location-tz", elmt => elmt.text($.tz()));
 };
 
 async function renderIfRecent ($) {

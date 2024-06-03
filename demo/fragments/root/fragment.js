@@ -41,15 +41,15 @@ async function render ($) {
   const error = $.error();
 
   if (error >= 400) {
-    $("#root-content", (elmt) => {elmt.attr("name", "error")});
+    $("#root-content", elmt => elmt.attr("name", "error"));
   } else if (path == "/") {
-    $("#root-content", (elmt) => {elmt.attr("name", "home")});
+    $("#root-content", elmt => elmt.attr("name", "home"));
   };
 
-  $("title", (elmt) => {elmt.text(`${$.title()} | MicroRender`)})
+  $("title", elmt => elmt.text(`${$.title()} | MicroRender`));
 
-  $("#root-message", (elmt) => {elmt.text("Set by root fragment")});
-  $("#root-url", (elmt) => {elmt.text(`The current URL is: ${$.url().toString()}`)});
+  $("#root-message", elmt => elmt.text("Set by root fragment"));
+  $("#root-url", elmt => elmt.text(`The current URL is: ${$.url().toString()}`));
 };
 
 export const server = {control, render};

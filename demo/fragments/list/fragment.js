@@ -18,7 +18,7 @@ function render ($) {
   const length = parseInt(5*Math.random() + 1);
   const iter = new Array(length).fill(0).map(() => ({randint: parseInt(Math.random()*100)}));
 
-  $("#list", elmt => {elmt.attr("data-iter", JSON.stringify(iter))});
+  $("#list", elmt => elmt.attr("data-iter", JSON.stringify(iter)));
 };
 
 export const server = {render};

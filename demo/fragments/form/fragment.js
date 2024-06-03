@@ -36,11 +36,11 @@ async function render ($) {
   };
 
   if (form) {
-    $("#form-result", (elmt) => {elmt.text(name)});
-    $("#form-method", (elmt) => {elmt.text(method)});
-    $("#form-output", (elmt) => {elmt.style("display", "")});
+    $("#form-result", elmt => elmt.text(name));
+    $("#form-method", elmt => elmt.text(method));
+    $("#form-output", elmt => elmt.style("display", ""));
   } else {
-    $("#form-output", (elmt) => {elmt.style("display", "none")});
+    $("#form-output", elmt => elmt.style("display", "none"));
   };
 };
 
