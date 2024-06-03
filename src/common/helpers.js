@@ -70,6 +70,9 @@ export function parseInterval(string) {
 export function parseQ(string) {
   // Parse a quality notation string (ie. `a, b;q=0.5`) to a sorted array.
 
+  // Default to English if no language specified
+  if (!string) return ["en"];
+
   // Parse the string into an array of values and q factors
   const array = string.split(",")
     .map(x => x.trim().split(";"))
