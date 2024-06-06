@@ -25,7 +25,7 @@ import { fileURLToPath } from "node:url";
 import resolvePackagePath from "resolve-package-path";
 import * as esbuild from "esbuild";
 
-import defaultConfig from "./common/default.config.js";
+import defaultConfig from "./default.config.js";
 
 const env = process.env["ENV"]?.toLowerCase?.() || "local";
 const deployUrl = process.env["DEPLOY_URL"] || null;
