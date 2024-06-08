@@ -108,21 +108,37 @@ class Plugin {
 class ServerOutput {
   // The build output for the server-side
 
-  async writeInit(fragments, {tmpDir, config}) {
+  constructor(fragments, config, tmpDir, buildDir, {assetSrc, plugins}) {
+    this.fragments = fragments;
+    this.config = config;
+    this.plugins = plugins;
+
+    this.initFile = path.join(tmpDir, "server.js");
+    this.bundleFile = path.join(buildDir ,"_worker.js");
+
+    this.fragmentDir = path.join(buildDir, "fragments");
+    this.assetDir = path.join(buildDir, "assets");
+
+    this.assetSrc = assetSrc;
+
+    this.clientOutput = new ClientOutput(fragments, config, tmpDir, buildDir);
+  };
+
+  async writeInit() {
     let f = undefined;
 
     // Ensure file gets closed cleanly
     try {
-      f = await fs.open(path.join(tmpDir, "server.js"), );
+      f = await fs.open(this.initFile, "w");
 
       // Import MicroRender
-      await f.write(`import init from ${config.serverBackend};\n`);
+      await f.write(`import init from ${this.config.serverBackend};\n`);
 
       // Import the fragments
       await f.write(`const fragments = new Map([\n`);
 
-      for (const fragment of fragments) {
-        // Use a dynamic import to load the fragments.
+      for (const fragment of this.fragments) {
+        // Use a dynamic import to load the fragments
 
         // NOTE: in many cases, `await import()` is a bad idea as it blocks the javascript during
         // a network request, preventing parallel imports. However, this isn't an issue here as
@@ -134,26 +150,122 @@ class ServerOutput {
       };
 
       await f.write(`]);\n\n`);
-      await f.write(`export default init(fragments)`);
+      await f.write(`export default init(fragments);`);
     } catch {
       if (f) f.close();
       throw e;
     };
   };
 
-  async build(fragments, {config}) {
+  async buildAll() {
+    // Copy files
+    await Promise.all([this.#copyAssets(), this.#copyFragments()]);
 
+    // Bundle JS
+    await Promise.all([this.bundle(), this.clientOutput.bundle()]);
+  };
+
+  async #copyFragments() {
+    await Promise.all(
+      this.fragments.map(({htmlPath, id}) => 
+        fs.copyFile(htmlPath, path.join(this.fragmentDir, `${id}.html`))
+      )
+    );
+  };
+
+  async #copyAssets() {
+    await fse.copy(this.assetSrc, this.assetDir);
+
+    await Promise.all(
+      this.plugins.map(
+        plugin => fse.copy(plugin.assetDir, path.join(this.assetDir, plugin.prefix))
+      )
+    );
+  };
+
+  async bundle() {
+    await esbuild.build({
+      entryPoints: [this.initFile],
+      outfile: this.bundleFile,
+  
+      bundle: true,
+      format: "esm",
+      keepNames: true,
+      minify: config.minify,
+      sourcemap: config.sourceMap,
+
+      // Don't split as server runtimes don't benefit from it and many don't support it at all
+      splitting: false,
+  
+      define: {
+        $CORS_ORIGINS: JSON.stringify(config.corsOrigins),
+        $DEPLOY_URL: JSON.stringify(deployUrl),
+        $STRIP_COMMENTS: JSON.stringify(config.stripComments)
+      }
+    });
   };
 };
 
 class ClientOutput {
   // The build output for the client-side
 
-  async writeInit(fragments, {tmpDir, config}) {
+  constructor(fragments, config, tmpDir, buildDir) {
+    this.fragments = fragments;
+    this.config = config;
 
+    this.initFile = path.join(tmpDir, "client.js");
+    this.bundleDir = path.join(buildDir, "assets", "microrender", "client.js");
   };
 
-  async build(fragments, config) {};
+  async writeInit() {
+    let f = undefined;
+
+    // Ensure file gets closed cleanly
+    try {
+      f = await fs.open(this.initFile, "w");
+
+      // Import MicroRender
+      await f.write(`import init from ${this.config.serverBackend};\n`);
+
+      // Import the fragments
+      await f.write(`const fragments = new Map([\n`);
+
+      for (const fragment of this.fragments) {
+        // Use a dynamic import to load the fragments
+
+        // NOTE: this does not actually import the fragments but has a callback to do so. The client
+        // runtime can then lazy-load the fragments
+
+        await f.write(`  ["${fragment.id}", async () => (await import("${fragment.jsPath}")).server],\n`);
+      };
+
+      await f.write(`]);\n\n`);
+      await f.write(`init(fragments);`);
+    } catch {
+      if (f) f.close();
+      throw e;
+    };
+  };
+
+  async bundle() {
+    await esbuild.build({
+      entryPoints: [path.join(tmp_dir, "browser.js")],
+      outdir: path.join(build_dir, "assets/microrender"),
+
+      bundle: true,
+      format: "esm",
+      keepNames: true,
+      minify: config.minify,
+      sourcemap: config.sourceMap,
+
+      // Include splitting so fragments can be lazy-loaded
+      splitting: true,
+
+      define: {
+        $DEPLOY_URL: JSON.stringify(deployUrl)
+      }
+    });
+  };
 };
 
 program
@@ -190,6 +302,8 @@ program
     const fragments = await Array.fromAsync(Fragment.getAll(fragmentDir, plugins));
 
     // Build runtimes
+    const output = new ServerOutput(fragments, config, tmpDir, buildDir, {assetSrc: assetDir, plugins});
+    await output.buildAll();
   });
 
 await program.parseAsync();
